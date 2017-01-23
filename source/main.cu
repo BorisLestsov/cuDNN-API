@@ -5,14 +5,9 @@
 
 #include "helper_functions.h"
 
-__global__ void f() {
-
-}
 
 int main(){
 	cudnnHandle_t handle;
-
-    f<<<1, 1>>>();
 
     checkCUDNN( cudnnCreate(&handle) );
 
