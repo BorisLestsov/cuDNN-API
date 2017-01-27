@@ -1,0 +1,7 @@
+build
+.idea
+
+dataset/annotations/
+dataset/coco/
+dataset/pic/
+dataset/.ipynb_checkpoints/
