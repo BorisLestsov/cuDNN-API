@@ -5,3 +5,4 @@ dataset/annotations/
 dataset/coco/
 dataset/pic/
 dataset/.ipynb_checkpoints/
+dataset/imgdata.dat
