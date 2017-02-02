@@ -10,13 +10,15 @@ set(CUDNN_PATH ${CUDA_TOOLKIT_ROOT_DIR})
 
 include(FindCUDA)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 list(APPEND CUDA_NVCC_FLAGS
         "-arch=sm_50;
         -std=c++11;
         -O2;
         -cudart=shared;")
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
 
 include_directories(${CUDNN_PATH} ${CUDNN_PATH}/include)
 link_directories(${CUDNN_PATH} ${CUDNN_PATH}/lib ${CUDNN_PATH}/lib64)

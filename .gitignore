@@ -6,3 +6,4 @@ dataset/coco/
 dataset/pic/
 dataset/.ipynb_checkpoints/
 dataset/imgdata.dat
+dataset/lbldata.dat
