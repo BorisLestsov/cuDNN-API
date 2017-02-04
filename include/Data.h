@@ -14,28 +14,30 @@ using std::ifstream;
 
 class Data {
 public:
+    int32_t n_examples;
+    int32_t ex_H;
+    int32_t ex_W;
+    int32_t ex_C;
+
     const size_t batch_size;
-    const size_t ex_H;
-    const size_t ex_W;
-    const size_t ex_C;
 
-
-    Data(const char* in_fname, size_t batch_size, size_t ex_H, size_t ex_W, size_t ex_C);
+    Data(const char* in_img_fname, const char* in_nms_fname, size_t batch_size);
     ~Data();
 
+    bool is_finished();
+    uint ex_left();
 
     virtual Batch get_next_batch() = 0;
 
 
 protected:
-    char* _data;
+    ifstream _in_f_data;
+    ifstream _in_f_ids;
+
+    int32_t n_read;
 
     size_t _ex_size_bytes;
     size_t _batch_size_bytes;
-
-    Labels _labels;
-    ifstream _in_f_data;
-
 };
 
 

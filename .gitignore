@@ -7,3 +7,4 @@ dataset/pic/
 dataset/.ipynb_checkpoints/
 dataset/imgdata.dat
 dataset/lbldata.dat
+dataset/nmdata.dat

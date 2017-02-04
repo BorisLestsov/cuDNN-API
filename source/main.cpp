@@ -16,10 +16,17 @@ int main(){
 */
 
     TrainData train("dataset/imgdata.dat",
-              "dataset/lbldata.dat",
-                2, 256, 256, 3);
+                    "dataset/nmdata.dat",
+                    "dataset/lbldata.dat",
+                    3);
 
-    Batch b = train.get_next_batch();
+    while (!train.is_finished()){
+        Batch b = train.get_next_batch();
+        for (uint i = 0; i < b.size; ++i){
+            std::cout << b.ids[i] << "   " << (int)  b.labels[i] << std::endl;
+        }
+        std::cout << std::endl;
+    }
 
 
 	return 0;

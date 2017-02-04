@@ -7,26 +7,36 @@
 #include <fstream>
 #include <exception>
 #include <cstddef>
-#include <cstdlib>
 
 
 class Batch {
 public:
     const size_t size;
 
+    Labels labels;
+    ImgIds ids;
 
-    Batch(size_t siz, char* data);
-    Batch(size_t siz, char* data, const Labels& lb);
+    Batch(size_t siz, bool with_labels = false);
+    Batch(size_t siz, const Labels& lb);
+
+    /*Batch(size_t siz, char* data);
+    Batch(size_t siz, char* data, const Labels& lb);*/
+
+    ~Batch();
 
     bool is_labeled();
-    Labels& get_labels();
-    void set_labels(const Labels& lb);
+
+    friend class Data;
+    friend class TrainData;
+    friend class ValidationData;
+    friend class TestData;
 
 private:
+    static uint _ex_size_bytes;
+
     char* _data;
 
     bool _is_labeled;
-    Labels _labels;
 };
 
 

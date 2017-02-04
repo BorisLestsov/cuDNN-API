@@ -7,11 +7,10 @@ class TrainData: public Data {
 public:
     TrainData(
             const char* data_f,
+            const char* ids_f,
             const char* labels_f,
-            size_t batch_size,
-            size_t ex_H,
-            size_t ex_W,
-            size_t ex_C);
+            size_t batch_size
+    );
 
     Batch get_next_batch() override;
 

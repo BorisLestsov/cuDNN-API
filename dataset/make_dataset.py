@@ -22,34 +22,48 @@ def main():
 
     images_dataset_nm = './imgdata.dat'
     labels_dataset_nm = './lbldata.dat'
+    ids_dataset_nm = './nmdata.dat'
 
     # Initialize COCO
     coco=COCO(annFile)
 
     im_f = open(images_dataset_nm, 'wb+')
     im_f.truncate()
+    nam_f = open(ids_dataset_nm, 'wb+')
+    nam_f.truncate()
     lb_f = open(labels_dataset_nm, 'wb+')
     lb_f.truncate()
 
-    for filenm in os.listdir(picDir):
-        # Image preprocessing
-        I = io.imread(picDir + filenm)
-        # Transformed version is already normalized
-        I = transform.resize(crop_center(I), (IMGSIZE, IMGSIZE))
-        im_f.write(I.tobytes())
+    img_names = os.listdir(picDir);
+    metadata = np.array([len(img_names), IMGSIZE, IMGSIZE, 3], dtype=np.int32)
+    print metadata
 
+    im_f.write(metadata.tobytes())
+
+    for filenm in img_names:
         # Label preprocessing
         imgIds = [int(filenm[-16:-4])]
         print filenm, ':', imgIds,
+
+        nam_f.write(np.array(imgIds, dtype=np.int32).tobytes());
+
         myImgIds = coco.getImgIds(imgIds)
         myImg = coco.loadImgs(myImgIds)
         myImgAnnIds = coco.getAnnIds(imgIds=myImgIds, iscrowd=False)
         myImgAnns = coco.loadAnns(myImgAnnIds)
         max_area_idx = np.argmax([ann['area'] for ann in myImgAnns])
         cat = myImgAnns[max_area_idx]['category_id']
-        print coco.loadCats(cat)[0]['name']
+        print coco.loadCats(cat)[0]['name'], "-", cat, " - ", chr(cat)
         lb_f.write(chr(cat))
 
+
+        # Image preprocessing
+        I = io.imread(picDir + filenm)
+        # Transformed version is already normalized
+        I = transform.resize(crop_center(I), (IMGSIZE, IMGSIZE))
+        im_f.write(I.tobytes())
+
+    nam_f.close()
     im_f.close()
     lb_f.close()
 

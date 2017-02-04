@@ -1,33 +1,35 @@
 #include "Data.h"
 
-Data::Data(const char* in_fname, size_t batch_size, size_t ex_H, size_t ex_W, size_t ex_C):
+Data::Data(const char* in_img_fname, const char* in_nms_fname, size_t batch_size):
         batch_size(batch_size),
-        ex_H(ex_H),
-        ex_W(ex_W),
-        ex_C(ex_C),
-        _ex_size_bytes(ex_H * ex_W * ex_C),
-        _batch_size_bytes(_ex_size_bytes * batch_size),
-        _labels(Labels())
+        n_read(0)
 {
-    _in_f_data.open(in_fname, std::ifstream::binary);
+    _in_f_data.open(in_img_fname, std::ifstream::binary);
     if (!_in_f_data.good())
         throw std::runtime_error("Could not open file with data");
+    _in_f_ids.open(in_nms_fname, std::ifstream::binary);
+    if (!_in_f_ids.good())
+        throw std::runtime_error("Could not open file with ids");
 
-    _data = (char*) malloc(_ex_size_bytes * batch_size);
+    _in_f_data.read((char*) &n_examples, sizeof(int32_t));
+    _in_f_data.read((char*) &ex_H, sizeof(int32_t));
+    _in_f_data.read((char*) &ex_W, sizeof(int32_t));
+    _in_f_data.read((char*) &ex_C, sizeof(int32_t));
+
+    _ex_size_bytes = ex_H * ex_W * ex_C;
+    _batch_size_bytes = _ex_size_bytes * batch_size;
+
+    Batch::_ex_size_bytes = _ex_size_bytes;
 }
 
 Data::~Data(){
     _in_f_data.close();
-    free(_data);
 }
 
+uint Data::ex_left(){
+    return n_examples - n_read;
+}
 
-// TODO: REMOVE THIS
-Batch Data::get_next_batch(){
-    _in_f_data.read(_data, _batch_size_bytes);
-    uint _bytes_read = _in_f_data.gcount();
-    if (_bytes_read % _ex_size_bytes != 0)
-        throw std::runtime_error("Data read error");
-
-    return Batch(_bytes_read / _ex_size_bytes, _data);
+bool Data::is_finished(){
+    return n_read == n_examples;
 }
