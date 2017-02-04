@@ -1,0 +1,10 @@
+#ifndef CUDNN_PROJ_POOLINGLAYER_H
+#define CUDNN_PROJ_POOLINGLAYER_H
+
+
+class PoolingLayer {
+
+};
+
+
+#endif //CUDNN_PROJ_POOLINGLAYER_H

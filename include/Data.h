@@ -13,10 +13,10 @@ using std::ifstream;
 
 class Data {
 public:
-    ids_t n_examples;
-    ids_t ex_H;
-    ids_t ex_W;
-    ids_t ex_C;
+    int32_t n_examples;
+    int32_t ex_H;
+    int32_t ex_W;
+    int32_t ex_C;
 
     const size_t batch_size;
     size_t loaded;
@@ -38,7 +38,7 @@ protected:
     ifstream _in_f_data;
     ifstream _in_f_ids;
 
-    ids_t n_read;
+    int32_t n_read;
 
     size_t _ex_size_bytes;
     size_t _batch_size_bytes;

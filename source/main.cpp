@@ -1,10 +1,7 @@
-#include <iostream>
-#include <cudnn.h>
-#include <cuda_runtime.h>
-#include <cublas.h>
-
-#include "helper_functions.h"
 #include "TrainData.h"
+#include "ConvNet.cuh"
+
+#include <iostream>
 
 
 int main(){
@@ -28,6 +25,8 @@ int main(){
         std::cout << std::endl;
     }
 
+    ConvNet alexnet;
+    alexnet.fit(train);
 
 	return 0;
 }

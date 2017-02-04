@@ -1,0 +1,10 @@
+#ifndef CUDNN_PROJ_CONVOLUTIONLAYER_H
+#define CUDNN_PROJ_CONVOLUTIONLAYER_H
+
+
+class ConvolutionLayer {
+
+};
+
+
+#endif //CUDNN_PROJ_CONVOLUTIONLAYER_H
