@@ -5,7 +5,7 @@
 
 #include "helper_functions.h"
 #include "TrainData.h"
-#include "Batch.h"
+
 
 int main(){
 	/*cudnnHandle_t handle;
@@ -21,9 +21,9 @@ int main(){
                     3);
 
     while (!train.is_finished()){
-        Batch b = train.get_next_batch();
-        for (uint i = 0; i < b.size; ++i){
-            std::cout << b.ids[i] << "   " << (int)  b.labels[i] << std::endl;
+        train.load_next_batch();
+        for (uint i = 0; i < train.loaded; ++i){
+            std::cout << train.ids_data[i] << "   " << (int) train.lbl_data[i] << std::endl;
         }
         std::cout << std::endl;
     }

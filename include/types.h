@@ -4,8 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-typedef std::vector<char> Labels;
-typedef std::vector<int32_t> ImgIds;
+typedef int32_t ids_t;
 
 
 #endif //CUDNN_PROJ_TYPES_H

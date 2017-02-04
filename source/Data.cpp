@@ -2,6 +2,7 @@
 
 Data::Data(const char* in_img_fname, const char* in_nms_fname, size_t batch_size):
         batch_size(batch_size),
+        loaded(0),
         n_read(0)
 {
     _in_f_data.open(in_img_fname, std::ifstream::binary);
@@ -16,14 +17,19 @@ Data::Data(const char* in_img_fname, const char* in_nms_fname, size_t batch_size
     _in_f_data.read((char*) &ex_W, sizeof(int32_t));
     _in_f_data.read((char*) &ex_C, sizeof(int32_t));
 
-    _ex_size_bytes = ex_H * ex_W * ex_C;
+    // TODO: FLOAT?
+    _ex_size_bytes = ex_H * ex_W * ex_C * sizeof(float);
     _batch_size_bytes = _ex_size_bytes * batch_size;
 
-    Batch::_ex_size_bytes = _ex_size_bytes;
+    img_data = (float*) malloc(_batch_size_bytes);
+    ids_data = (ids_t*) malloc(batch_size * sizeof(int32_t));
 }
 
 Data::~Data(){
     _in_f_data.close();
+    _in_f_ids.close();
+    free(img_data);
+    free(ids_data);
 }
 
 uint Data::ex_left(){

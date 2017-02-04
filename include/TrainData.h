@@ -5,6 +5,9 @@
 
 class TrainData: public Data {
 public:
+
+    char* lbl_data;
+
     TrainData(
             const char* data_f,
             const char* ids_f,
@@ -12,7 +15,9 @@ public:
             size_t batch_size
     );
 
-    Batch get_next_batch() override;
+    ~TrainData();
+
+    void load_next_batch() override;
 
 private:
 
