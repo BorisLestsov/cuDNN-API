@@ -9,7 +9,7 @@ TrainData::TrainData(
 :
         Data(cudnn_handle_p, data_f, ids_f, batch_size)
 {
-    _in_f_labels.open(labels_f, std::ifstream::binary);
+    _in_f_labels.open(labels_f, std::ifstream::binary | std::ifstream::in);
     if (!_in_f_labels.good())
         throw std::runtime_error("Could not open file with labels");
 

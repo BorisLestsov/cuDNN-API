@@ -6,10 +6,10 @@ Data::Data(cudnnHandle_t& cudnn_handle_p, const char* in_img_fname, const char* 
         loaded(0),
         n_read(0)
 {
-    _in_f_data.open(in_img_fname, std::ifstream::binary);
+    _in_f_data.open(in_img_fname, std::ifstream::binary | std::ifstream::in);
     if (!_in_f_data.good())
         throw std::runtime_error("Could not open file with data");
-    _in_f_ids.open(in_nms_fname, std::ifstream::binary);
+    _in_f_ids.open(in_nms_fname, std::ifstream::binary | std::ifstream::in);
     if (!_in_f_ids.good())
         throw std::runtime_error("Could not open file with ids");
 

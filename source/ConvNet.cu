@@ -3,8 +3,11 @@
 
 ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p, cublasHandle_t& cublas_handle_p):
         cudnn_handle(cudnn_handle_p),
-        cublas_handle(cublas_handle_p)
-{}
+        cublas_handle(cublas_handle_p),
+        fc1(cublas_handle, 2, 2)
+{
+    fc1.init_weights_random();
+}
 
 
 void ConvNet::fit(TrainData& train){
@@ -15,6 +18,8 @@ void ConvNet::fit(TrainData& train){
         }
         std::cout << std::endl;
     }
+
+    fc1.propagate_forward();
 }
 
 

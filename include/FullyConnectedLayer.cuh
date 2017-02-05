@@ -1,7 +1,7 @@
 #ifndef CUDNN_PROJ_FULLYCONNECTEDLAYER_H
 #define CUDNN_PROJ_FULLYCONNECTEDLAYER_H
 
-#include "Layer.h"
+#include "Layer.cuh"
 #include "cstdlib"
 
 class FullyConnectedLayer: public Layer {
@@ -14,7 +14,7 @@ public:
     float* d_weights, *d_bias;
 
 
-    FullyConnectedLayer(size_t n_inp_p, size_t n_outp_p);
+    FullyConnectedLayer(cublasHandle_t& cublas_handle_p, size_t n_inp_p, size_t n_outp_p);
     ~FullyConnectedLayer();
 
 
@@ -25,7 +25,7 @@ public:
     void propagate_forward(/* ... */);
 
 private:
-
+    cublasHandle_t& cublas_handle;
 
 };
 
