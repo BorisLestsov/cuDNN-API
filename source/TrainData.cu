@@ -1,23 +1,29 @@
-#include "TrainData.h"
+#include "TrainData.cuh"
 
 TrainData::TrainData(
+        cudnnHandle_t& cudnn_handle_p,
         const char* data_f,
         const char* ids_f,
         const char* labels_f,
         size_t batch_size)
 :
-        Data(data_f, ids_f, batch_size)
+        Data(cudnn_handle_p, data_f, ids_f, batch_size)
 {
     _in_f_labels.open(labels_f, std::ifstream::binary);
     if (!_in_f_labels.good())
         throw std::runtime_error("Could not open file with labels");
 
-    lbl_data = (char*) malloc(batch_size);
+    lbl_data = (float*) malloc(batch_size * sizeof(float));
+
+    // TODO: check if labels might be float* on GPU!
+    checkCudaErrors( cudaMalloc(&d_lbl_data, batch_size * sizeof(float)) );
 }
 
 TrainData::~TrainData(){
     _in_f_labels.close();
     free(lbl_data);
+
+    checkCudaErrors( cudaFree(d_lbl_data) );
 }
 
 
@@ -33,9 +39,9 @@ void TrainData::load_next_batch() {
     if (bytes_read != bytes_to_read)
         throw std::runtime_error("Image data read error");
 
-    _in_f_labels.read( (char*) lbl_data, ex_to_read * sizeof(char) );
+    _in_f_labels.read( (char*) lbl_data, ex_to_read * sizeof(float) );
     bytes_read = _in_f_labels.gcount();
-    if (bytes_read != ex_to_read * sizeof(char))
+    if (bytes_read != ex_to_read * sizeof(float))
         throw std::runtime_error("Labels data read error");
 
     _in_f_ids.read( (char*) ids_data, ex_to_read * sizeof(int32_t) );
@@ -46,4 +52,11 @@ void TrainData::load_next_batch() {
     n_read += ex_to_read;
     loaded = ex_to_read;
 
+}
+
+void TrainData::copy_batch_to_GPU(){
+    checkCudaErrors( cudaMemcpyAsync(d_img_data, img_data,
+                                     loaded * _ex_size_bytes, cudaMemcpyHostToDevice) );
+    checkCudaErrors( cudaMemcpyAsync(d_lbl_data, lbl_data,
+                                    sizeof(float) * loaded, cudaMemcpyHostToDevice) );
 }

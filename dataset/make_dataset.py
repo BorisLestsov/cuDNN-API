@@ -46,21 +46,23 @@ def main():
         print filenm, ':', imgIds,
 
         nam_f.write(np.array(imgIds, dtype=np.int32).tobytes());
-
+        
         myImgIds = coco.getImgIds(imgIds)
         myImg = coco.loadImgs(myImgIds)
         myImgAnnIds = coco.getAnnIds(imgIds=myImgIds, iscrowd=False)
         myImgAnns = coco.loadAnns(myImgAnnIds)
         max_area_idx = np.argmax([ann['area'] for ann in myImgAnns])
         cat = myImgAnns[max_area_idx]['category_id']
-        print coco.loadCats(cat)[0]['name'], "-", cat, " - ", chr(cat)
-        lb_f.write(chr(cat))
-
+        cat_tmp = np.array([cat], dtype=np.float32)
+        print coco.loadCats(cat)[0]['name'], "-", cat, " - ", cat_tmp
+        lb_f.write(cat_tmp.tobytes())
+        
 
         # Image preprocessing
         I = io.imread(picDir + filenm)
         # Transformed version is already normalized
         I = transform.resize(crop_center(I), (IMGSIZE, IMGSIZE))
+        I = I.astype('float32')
         im_f.write(I.tobytes())
 
     nam_f.close()

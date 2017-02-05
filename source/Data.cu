@@ -1,6 +1,7 @@
-#include "Data.h"
+#include "Data.cuh"
 
-Data::Data(const char* in_img_fname, const char* in_nms_fname, size_t batch_size):
+Data::Data(cudnnHandle_t& cudnn_handle_p, const char* in_img_fname, const char* in_nms_fname, size_t batch_size):
+        cudnn_handle(cudnn_handle_p),
         batch_size(batch_size),
         loaded(0),
         n_read(0)
@@ -17,12 +18,20 @@ Data::Data(const char* in_img_fname, const char* in_nms_fname, size_t batch_size
     _in_f_data.read((char*) &ex_W, sizeof(int32_t));
     _in_f_data.read((char*) &ex_C, sizeof(int32_t));
 
-    // TODO: FLOAT?
     _ex_size_bytes = ex_H * ex_W * ex_C * sizeof(float);
     _batch_size_bytes = _ex_size_bytes * batch_size;
 
     img_data = (float*) malloc(_batch_size_bytes);
     ids_data = (ids_t*) malloc(batch_size * sizeof(int32_t));
+
+
+    checkCudaErrors( cudaMalloc(&d_img_data, _batch_size_bytes) );
+    checkCUDNN( cudnnCreateTensorDescriptor(&img_data_tensor_desc) );
+    checkCUDNN( cudnnSetTensor4dDescriptor(img_data_tensor_desc,
+                                           CUDNN_TENSOR_NCHW,
+                                           CUDNN_DATA_FLOAT,
+                                           n_examples, ex_C,
+                                           ex_H, ex_W) );
 }
 
 Data::~Data(){
@@ -30,6 +39,8 @@ Data::~Data(){
     _in_f_ids.close();
     free(img_data);
     free(ids_data);
+
+    checkCudaErrors( cudaFree(d_img_data) );
 }
 
 uint Data::ex_left(){

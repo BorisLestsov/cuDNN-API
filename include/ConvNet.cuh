@@ -1,8 +1,8 @@
-#ifndef CUDNN_PROJ_CONVNET_H
-#define CUDNN_PROJ_CONVNET_H
+#ifndef CUDNN_PROJ_CONVNET_CUH
+#define CUDNN_PROJ_CONVNET_CUH
 
-#include "helper_functions.h"
-#include "TrainData.h"
+#include "helper_functions.cuh"
+#include "TrainData.cuh"
 #include "TestData.h"
 
 #include <cudnn.h>
@@ -22,4 +22,4 @@ private:
 };
 
 
-#endif //CUDNN_PROJ_CONVNET_H
+#endif //CUDNN_PROJ_CONVNET_CUH

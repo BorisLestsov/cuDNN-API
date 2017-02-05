@@ -32,6 +32,7 @@ file(GLOB SOURCES
         "${SOURCE_DIR}/*.c")
 
 file(GLOB INCLUDE
+        "${INCLUDE_DIR}/*.cuh"
         "${INCLUDE_DIR}/*.h"
         "${INCLUDE_DIR}/*.hpp")
 

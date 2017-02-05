@@ -1,26 +1,25 @@
-#include "TrainData.h"
+#include "TrainData.cuh"
 #include "ConvNet.cuh"
 
 #include <iostream>
 
 
 int main(){
-	/*cudnnHandle_t handle;
+    init_cuda();
 
+    cudnnHandle_t handle;
     checkCUDNN( cudnnCreate(&handle) );
 
-    checkCUDNN( cudnnDestroy(handle) );
-*/
-
-    TrainData train("dataset/imgdata.dat",
+    TrainData train(handle,
+                    "dataset/imgdata.dat",
                     "dataset/nmdata.dat",
                     "dataset/lbldata.dat",
-                    3);
+                    2);
 
     while (!train.is_finished()){
         train.load_next_batch();
         for (uint i = 0; i < train.loaded; ++i){
-            std::cout << train.ids_data[i] << "   " << (int) train.lbl_data[i] << std::endl;
+            std::cout << train.ids_data[i] << "   " << train.lbl_data[i] << std::endl;
         }
         std::cout << std::endl;
     }
@@ -28,5 +27,7 @@ int main(){
     ConvNet alexnet;
     alexnet.fit(train);
 
-	return 0;
+
+    checkCUDNN( cudnnDestroy(handle) );
+    return 0;
 }
