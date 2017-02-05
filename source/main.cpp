@@ -5,29 +5,24 @@
 
 
 int main(){
-    init_cuda();
+    InitializeCUDA();
 
-    cudnnHandle_t handle;
-    checkCUDNN( cudnnCreate(&handle) );
+    cudnnHandle_t cudnn_handle;
+    checkCUDNN( cudnnCreate(&cudnn_handle) );
+    cublasHandle_t cublas_handle;
+    checkCudaErrors( cublasCreate(&cublas_handle) );
 
-    TrainData train(handle,
+    TrainData train(cudnn_handle,
                     "dataset/imgdata.dat",
                     "dataset/nmdata.dat",
                     "dataset/lbldata.dat",
                     2);
 
-    while (!train.is_finished()){
-        train.load_next_batch();
-        for (uint i = 0; i < train.loaded; ++i){
-            std::cout << train.ids_data[i] << "   " << train.lbl_data[i] << std::endl;
-        }
-        std::cout << std::endl;
-    }
-
-    ConvNet alexnet;
+    ConvNet alexnet(cudnn_handle, cublas_handle);
     alexnet.fit(train);
 
 
-    checkCUDNN( cudnnDestroy(handle) );
+    checkCUDNN( cudnnDestroy(cudnn_handle) );
+    checkCudaErrors( cublasDestroy(cublas_handle) );
     return 0;
 }
