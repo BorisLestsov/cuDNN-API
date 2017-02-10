@@ -6,17 +6,17 @@ FullyConnectedLayer::FullyConnectedLayer(cublasHandle_t& cublas_handle_p, size_t
         n_inp(n_inp_p),
         n_outp(n_outp_p)
 {
-    weights = (float*) malloc(n_inp * n_outp);
-    bias = (float*) malloc(n_outp);
+    h_weights = (float*) malloc(n_inp * n_outp * sizeof(float));
+    h_bias = (float*) malloc(n_outp * sizeof(float));
 
-    checkCudaErrors( cudaMalloc(&d_weights, n_inp * n_outp * sizeof(float)) );
-    checkCudaErrors( cudaMalloc(&d_bias, n_outp * sizeof(float)) );
+    checkCudaErrors( cudaMalloc((void**) &d_weights, n_inp * n_outp * sizeof(float)) );
+    checkCudaErrors( cudaMalloc((void**) &d_bias, n_outp * sizeof(float)) );
 }
 
 
 FullyConnectedLayer::~FullyConnectedLayer() {
-    free(weights);
-    free(bias);
+    free(h_weights);
+    free(h_bias);
 
     checkCudaErrors( cudaFree(d_weights) );
     checkCudaErrors( cudaFree(d_bias) );
@@ -25,35 +25,61 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 
 void FullyConnectedLayer::init_weights_random(/* rand function?*/){
 
-    std::fill(weights, weights + n_inp*n_outp, 2.0f);
-    std::fill(bias, bias + n_outp, 2.0f);
+    uint i, j;
 
-    checkCudaErrors( cudaMemcpy(d_weights, weights,
+    for (i = 0; i < n_outp; ++i){
+        for (j = 0; j < n_inp; ++j){
+            h_weights[i*n_inp + j] = i*n_inp + j;
+        }
+    }
+
+
+    for (i = 0; i < n_outp; ++i){
+        for (j = 0; j < n_inp; ++j){
+            std::cout << h_weights[i*n_inp + j]  << "    ";
+        }
+        std::cout << std::endl;
+    }
+
+    checkCudaErrors( cudaMemcpy(d_weights, h_weights,
                                      sizeof(float) * n_inp * n_outp, cudaMemcpyHostToDevice) );
-    checkCudaErrors( cudaMemcpy(d_bias, bias,
+    checkCudaErrors( cudaMemcpy(d_bias, h_bias,
                                      sizeof(float) * n_outp, cudaMemcpyHostToDevice) );
 
 }
 
-void FullyConnectedLayer::propagate_forward(/* ... */){
+void FullyConnectedLayer::propagate_forward(float* d_x){
     float alpha = 1.0f;
     float beta = 0.0f;
 
-    checkCudaErrors( cublasSgemm(cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N,
-                                 2,2,2,
-                                 &alpha,
-                                 d_weights, 2,
-                                 d_weights, 2,
-                                 0,
-                                 d_weights, 2) );
 
-    checkCudaErrors( cudaMemcpyAsync(weights, d_weights,
-                                     sizeof(float) * n_inp * n_outp, cudaMemcpyDeviceToHost) );
+    /*
+     * THis is a working example of Sgevm:
 
-    for (uint i = 0; i < 2; ++i){
-        for (uint j = 0; j < 2; ++j){
-            std::cout << weights[i*2 + j]  << "    ";
-        }
-        std::cout << std::endl;
-    }
+     n_inp = true cols
+     n_outp = true rows
+    checkCublasErrors( cublasSgemv(cublas_handle,
+                                   CUBLAS_OP_T,
+                                   n_inp, n_outp,
+                                   &alpha,
+                                   d_weights, n_inp,
+                                   d_x, 1,
+                                   &beta,
+                                   d_x, 1) );
+    */
+
+    /*
+
+    Working gemm
+
+    checkCublasErrors( cublasSgemm(cublas_handle,
+                                   CUBLAS_OP_N, CUBLAS_OP_N,
+                                   colsB, rowsA, colsA
+                                   &alpha,
+                                   d_B, colsB,
+                                   d_A, colsA,
+                                   &beta,
+                                   d_Store, colsStore) );
+    */
+
 }

@@ -3,7 +3,7 @@ import numpy as np
 from pycocotools.coco import COCO
 from skimage import io, transform
 
-IMGSIZE = 256
+IMGSIZE = 227
 
 # Crop center part of image
 def crop_center(img):

@@ -1,8 +1,10 @@
 #ifndef CUDNN_PROJ_HELPER_FUNCTIONS_CUH
 #define CUDNN_PROJ_HELPER_FUNCTIONS_CUH
 
-#include <cuda_runtime.h>
 #include <cudnn.h>
+#include <cuda_runtime.h>
+#include <cublas.h>
+#include <cublas_v2.h>
 
 #include <sstream>
 #include <iostream>
@@ -43,33 +45,77 @@ inline void InitializeCUDA(){
 }
 
 
-#define FatalError(s) do {                                             \
-    std::stringstream _where, _message;                                \
-    _where << __FILE__ << ':' << __LINE__;                             \
-    _message << std::string(s) + "\n" << __FILE__ << ':' << __LINE__;  \
-    std::cerr << _message.str() << "\nAborting...\n";                  \
-    cudaDeviceReset();                                                 \
-    exit(1);                                                           \
-} while(0)
+inline void _checkCudnnErrors(const cudnnStatus_t& status, const char* file, int line) {
+    if (status != CUDNN_STATUS_SUCCESS) {
+        std::stringstream _error;
+        _error  << "CUDNN failure: "
+                << cudnnGetErrorString(status)
+                << std::endl;
+        _error << file << ':' << line << std::endl;
+        throw std::runtime_error(_error.str().c_str());
+    }
+}
+
+#define checkCudnnErrors(status) _checkCudnnErrors(status, __FILE__, __LINE__);
 
 
-#define checkCUDNN(status) do {                                        \
-    std::stringstream _error;                                          \
-    if (status != CUDNN_STATUS_SUCCESS) {                              \
-      _error << "CUDNN failure: " << cudnnGetErrorString(status);      \
-      FatalError(_error.str());                                        \
-    }                                                                  \
-} while (0)
+
+inline void _checkCudaErrors(const cudaError_t& status, const char* file, int line) {
+    if (status != cudaSuccess) {
+        std::stringstream _error;
+        _error  << "Cuda failure: "
+                << cudaGetErrorString(status)
+                << std::endl;
+        _error << file << ':' << line << std::endl;
+        throw std::runtime_error(_error.str().c_str());
+    }
+}
+
+#define checkCudaErrors(status) _checkCudaErrors(status, __FILE__, __LINE__);
 
 
-#define checkCudaErrors(status) do {                                   \
-    std::stringstream _error;                                          \
-    if (status != 0) {                                                 \
-      _error << "Cuda failure: " << status;                            \
-      FatalError(_error.str());                                        \
-    }                                                                  \
-} while (0)
+inline const char *cublasGetErrorString(const cublasStatus_t& error) {
+    switch (error) {
+        case CUBLAS_STATUS_SUCCESS:
+            return "CUBLAS_STATUS_SUCCESS";
 
+        case CUBLAS_STATUS_NOT_INITIALIZED:
+            return "CUBLAS_STATUS_NOT_INITIALIZED";
+
+        case CUBLAS_STATUS_ALLOC_FAILED:
+            return "CUBLAS_STATUS_ALLOC_FAILED";
+
+        case CUBLAS_STATUS_INVALID_VALUE:
+            return "CUBLAS_STATUS_INVALID_VALUE";
+
+        case CUBLAS_STATUS_ARCH_MISMATCH:
+            return "CUBLAS_STATUS_ARCH_MISMATCH";
+
+        case CUBLAS_STATUS_MAPPING_ERROR:
+            return "CUBLAS_STATUS_MAPPING_ERROR";
+
+        case CUBLAS_STATUS_EXECUTION_FAILED:
+            return "CUBLAS_STATUS_EXECUTION_FAILED";
+
+        case CUBLAS_STATUS_INTERNAL_ERROR:
+            return "CUBLAS_STATUS_INTERNAL_ERROR";
+    }
+    return "<unknown>";
+}
+
+
+inline void _checkCublasErrors(const cublasStatus_t& status, const char* file, int line) {
+    if (status != CUBLAS_STATUS_SUCCESS) {
+        std::stringstream _error;
+        _error << "Cublas failure: "
+               << cublasGetErrorString(status)
+               << std::endl;
+        _error << file << ':' << line;
+        throw std::runtime_error(_error.str().c_str());
+    }
+}
+
+#define checkCublasErrors(status) _checkCublasErrors(status, __FILE__, __LINE__);
 
 
 #endif //CUDNN_PROJ_HELPER_FUNCTIONS_CUH

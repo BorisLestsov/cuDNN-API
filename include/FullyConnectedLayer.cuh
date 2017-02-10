@@ -10,7 +10,7 @@ public:
 
     size_t n_inp, n_outp;
 
-    float* weights, *bias;
+    float* h_weights, *h_bias;
     float* d_weights, *d_bias;
 
 
@@ -22,7 +22,7 @@ public:
     void load_weights_from_file(const char* fname);
 
     // TODO: ???
-    void propagate_forward(/* ... */);
+    void propagate_forward(float* d_x);
 
 private:
     cublasHandle_t& cublas_handle;

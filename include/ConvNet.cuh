@@ -5,6 +5,7 @@
 #include "TrainData.cuh"
 #include "TestData.h"
 #include "FullyConnectedLayer.cuh"
+#include "ConvolutionLayer.cuh"
 
 #include <cudnn.h>
 #include <cuda_runtime.h>
@@ -15,7 +16,9 @@
 class ConvNet {
 public:
 
-    ConvNet(cudnnHandle_t& cudnn_handle, cublasHandle_t& cublas_handle);
+    ConvNet(cudnnHandle_t& cudnn_handle,
+            cublasHandle_t& cublas_handle,
+            cudnnTensorDescriptor_t data_tensor_desc_p);
 
     void fit(TrainData&);
     char* predict(TestData&);
@@ -23,10 +26,11 @@ public:
 private:
 
     FullyConnectedLayer fc1;
+    ConvolutionLayer conv1;
 
     cudnnHandle_t& cudnn_handle;
     cublasHandle_t& cublas_handle;
-
+    cudnnTensorDescriptor_t data_tensor_desc;
 };
 
 

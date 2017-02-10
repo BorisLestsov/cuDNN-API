@@ -26,8 +26,8 @@ Data::Data(cudnnHandle_t& cudnn_handle_p, const char* in_img_fname, const char* 
 
 
     checkCudaErrors( cudaMalloc(&d_img_data, _batch_size_bytes) );
-    checkCUDNN( cudnnCreateTensorDescriptor(&img_data_tensor_desc) );
-    checkCUDNN( cudnnSetTensor4dDescriptor(img_data_tensor_desc,
+    checkCudnnErrors( cudnnCreateTensorDescriptor(&img_data_tensor_desc) );
+    checkCudnnErrors( cudnnSetTensor4dDescriptor(img_data_tensor_desc,
                                            CUDNN_TENSOR_NCHW,
                                            CUDNN_DATA_FLOAT,
                                            n_examples, ex_C,
@@ -41,6 +41,7 @@ Data::~Data(){
     free(ids_data);
 
     checkCudaErrors( cudaFree(d_img_data) );
+    cudnnDestroyTensorDescriptor(img_data_tensor_desc);
 }
 
 uint Data::ex_left(){
