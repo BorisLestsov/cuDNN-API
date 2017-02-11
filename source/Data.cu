@@ -28,10 +28,9 @@ Data::Data(cudnnHandle_t& cudnn_handle_p, const char* in_img_fname, const char* 
     checkCudaErrors( cudaMalloc(&d_img_data, _batch_size_bytes) );
     checkCudnnErrors( cudnnCreateTensorDescriptor(&img_data_tensor_desc) );
     checkCudnnErrors( cudnnSetTensor4dDescriptor(img_data_tensor_desc,
-                                           CUDNN_TENSOR_NCHW,
-                                           CUDNN_DATA_FLOAT,
-                                           batch_size, ex_C,
-                                           ex_H, ex_W) );
+                                                 CUDNN_TENSOR_NCHW,
+                                                 CUDNN_DATA_FLOAT,
+                                                 batch_size, ex_C, ex_H, ex_W) );
 }
 
 Data::~Data(){

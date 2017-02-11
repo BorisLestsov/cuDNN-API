@@ -10,25 +10,28 @@ public:
     cudnnConvolutionDescriptor_t conv_desc;
     cudnnFilterDescriptor_t filter_desc;
 
+    cudnnTensorDescriptor_t input_tensor_desc;
+    cudnnTensorDescriptor_t output_tensor_desc;
+
+    cudnnConvolutionFwdAlgo_t algo;
+
     // TODO: Replace these with costructor parameters
 
-    size_t in_N, in_H, in_W, in_C;
-    size_t depth, kernel_size, filter_stride, zero_padding;
-    size_t out_N, out_H, out_W, out_C;  // FORWARD!!!
+    int in_N, in_C, in_H, in_W;
+    int depth, kernel_size, filter_stride, zero_padding;
+    int out_N, out_C, out_H, out_W;  // FORWARD!!!
 
-
+    size_t workspace_size_bytes;
 
     float* h_weights, *h_bias;
     float* d_weights, *d_bias;
+    float* d_output;
 
     ConvolutionLayer(cudnnHandle_t& cudnn_handle_p);
     ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
-                     cudnnTensorDescriptor_t data_tensor_desc_p,
+                     cudnnTensorDescriptor_t input_tensor_desc_p,
                      size_t depth, size_t ker_size, size_t stride, size_t zp = 0);
-    ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
-                     size_t in_C, size_t out_C, size_t kernel_size,
-                     size_t in_W, size_t in_H,
-                     size_t out_W, size_t out_H);
+
     ~ConvolutionLayer();
 
 
@@ -40,6 +43,8 @@ public:
 
 private:
     cudnnHandle_t& cudnn_handle;
+    void* _workspace;
+
 
 };
 
