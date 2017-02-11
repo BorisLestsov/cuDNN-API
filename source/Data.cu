@@ -30,7 +30,7 @@ Data::Data(cudnnHandle_t& cudnn_handle_p, const char* in_img_fname, const char* 
     checkCudnnErrors( cudnnSetTensor4dDescriptor(img_data_tensor_desc,
                                            CUDNN_TENSOR_NCHW,
                                            CUDNN_DATA_FLOAT,
-                                           n_examples, ex_C,
+                                           batch_size, ex_C,
                                            ex_H, ex_W) );
 }
 
