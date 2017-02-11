@@ -44,6 +44,7 @@ public:
 
     bool is_finished();
     uint ex_left();
+    uint get_n_read() const;
 
     virtual void load_next_batch() = 0;
     virtual void copy_batch_to_GPU() = 0;

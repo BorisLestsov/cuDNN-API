@@ -17,14 +17,15 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
 
 void ConvNet::fit(TrainData& train){
     while (!train.is_finished()){
+        std::cout << "Propagating next batch: " << train.get_n_read() << std::endl;
         train.load_next_batch();
-        for (uint i = 0; i < train.loaded; ++i){
+        conv1.propagate_forward(train.d_img_data);
+
+        /*for (uint i = 0; i < train.loaded; ++i){
             std::cout << train.ids_data[i] << "   " << train.lbl_data[i] << std::endl;
         }
-        std::cout << std::endl;
+        std::cout << std::endl;*/
     }
-
-    conv1.propagate_forward(train.d_img_data);
 
 }
 

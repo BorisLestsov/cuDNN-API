@@ -43,6 +43,11 @@ Data::~Data(){
     cudnnDestroyTensorDescriptor(img_data_tensor_desc);
 }
 
+
+uint Data::get_n_read() const {
+    return n_read;
+}
+
 uint Data::ex_left(){
     return n_examples - n_read;
 }
