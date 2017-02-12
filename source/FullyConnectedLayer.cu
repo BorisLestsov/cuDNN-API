@@ -19,7 +19,7 @@ FullyConnectedLayer::FullyConnectedLayer(cublasHandle_t& cublas_handle_p,
     out_C = 1;
     out_N = 1;
     out_H = n_outp;
-    out_W = in_N;
+    out_W = in_N;       // in_n == batch_size !
 
     h_weights = (float*) malloc(n_inp * n_outp * sizeof(float));
     h_bias = (float*) malloc(n_outp * sizeof(float));
