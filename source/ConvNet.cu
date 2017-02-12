@@ -12,12 +12,12 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
 
         conv1(cudnn_handle_p, data_tensor_desc_p, 96, 11, 4),
         pool1(cudnn_handle_p, conv1.output_tensor_desc, 2, 2),
-        fc1(cublas_handle_p, 2, 3),
+        fc1(cublas_handle_p, pool1.output_tensor_desc, 256),
 
         gen(seed == 0 ? rd() : seed)
 {
     conv1.init_weights_random(gen);
-    fc1.init_weights_random(/*gen*/);
+    fc1.init_weights_random(gen);
 }
 
 
@@ -27,7 +27,7 @@ void ConvNet::fit(TrainData& train){
         train.load_next_batch();
         conv1.propagate_forward(train.d_img_data);
         pool1.propagate_forward(conv1.d_output);
-
+        fc1.propagate_forward(pool1.d_output);
         /*for (uint i = 0; i < train.loaded; ++i){
             std::cout << train.ids_data[i] << "   " << train.lbl_data[i] << std::endl;
         }
