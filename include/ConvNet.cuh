@@ -8,6 +8,8 @@
 #include "PoolingLayer.cuh"
 #include "FullyConnectedLayer.cuh"
 
+#include <random>
+
 #include <cudnn.h>
 #include <cuda_runtime.h>
 #include <cublas.h>
@@ -19,7 +21,8 @@ public:
 
     ConvNet(cudnnHandle_t& cudnn_handle,
             cublasHandle_t& cublas_handle,
-            cudnnTensorDescriptor_t data_tensor_desc_p);
+            cudnnTensorDescriptor_t data_tensor_desc_p,
+            uint seed = 0);
 
     void fit(TrainData&);
     char* predict(TestData&);
@@ -33,6 +36,9 @@ private:
     cudnnHandle_t& cudnn_handle;
     cublasHandle_t& cublas_handle;
     cudnnTensorDescriptor_t data_tensor_desc;
+
+    std::random_device rd;
+    std::mt19937 gen;
 };
 
 

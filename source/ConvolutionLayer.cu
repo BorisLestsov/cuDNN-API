@@ -13,7 +13,8 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
         filter_stride(stride),
         zero_padding(zp),
         in_C(3),
-        out_C(depth_p)
+        out_C(depth_p),
+        _randrange(1.0)
 {
     checkCudnnErrors( cudnnCreateFilterDescriptor(&filter_desc) );
     checkCudnnErrors( cudnnCreateConvolutionDescriptor(&conv_desc) );
@@ -91,8 +92,14 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
     std::cout << "Workspace size: " << workspace_size_bytes << std::endl;
 
     checkCudaErrors( cudaMalloc(&_workspace, workspace_size_bytes) );
-    checkCudaErrors( cudaMalloc(&d_weights, sizeof(float) * in_N * in_C * kernel_size * kernel_size * out_H * out_W * out_C) );
-    checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * out_N * out_C * out_H * out_W) );
+
+    weights_length = in_N * kernel_size * kernel_size * out_C;
+    output_length = out_N * out_C * out_H * out_W;
+
+    h_weights = (float*) malloc(sizeof(float) * weights_length);
+
+    checkCudaErrors( cudaMalloc(&d_weights, sizeof(float) * weights_length) );
+    checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * output_length) );
 
 }
 
@@ -102,6 +109,8 @@ ConvolutionLayer::~ConvolutionLayer() {
     cudnnDestroyConvolutionDescriptor(conv_desc);
     cudnnDestroyFilterDescriptor(filter_desc);
     cudnnDestroyTensorDescriptor(output_tensor_desc);
+
+    free(h_weights);
 
     checkCudaErrors( cudaFree(d_weights) );
     checkCudaErrors( cudaFree(d_output) );
@@ -142,3 +151,13 @@ void ConvolutionLayer::propagate_forward(float* d_x){
                                               */
 }
 
+
+void ConvolutionLayer::init_weights_random(std::mt19937& gen){
+    std::uniform_real_distribution<> get_rand(-_randrange, _randrange);
+
+    for (uint i = 0; i < weights_length; ++i)
+        h_weights[i] = static_cast<float>(get_rand(gen));
+
+    checkCudaErrors( cudaMemcpy(d_weights, h_weights,
+                                sizeof(float) * weights_length, cudaMemcpyHostToDevice) );
+}

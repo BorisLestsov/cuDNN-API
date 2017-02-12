@@ -3,16 +3,21 @@
 
 ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
                  cublasHandle_t& cublas_handle_p,
-                 cudnnTensorDescriptor_t data_tensor_desc_p):
+                 cudnnTensorDescriptor_t data_tensor_desc_p,
+                 uint seed):
 
         cudnn_handle(cudnn_handle_p),
         cublas_handle(cublas_handle_p),
+        data_tensor_desc(data_tensor_desc_p),
+
         conv1(cudnn_handle_p, data_tensor_desc_p, 96, 11, 4),
         pool1(cudnn_handle_p, conv1.output_tensor_desc, 2, 2),
         fc1(cublas_handle_p, 2, 3),
-        data_tensor_desc(data_tensor_desc_p)
+
+        gen(seed == 0 ? rd() : seed)
 {
-    fc1.init_weights_random();
+    conv1.init_weights_random(gen);
+    fc1.init_weights_random(/*gen*/);
 }
 
 

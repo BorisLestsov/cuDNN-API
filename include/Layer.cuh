@@ -3,6 +3,7 @@
 
 #include "helper_functions.cuh"
 
+#include <random>
 #include <cudnn.h>
 #include <cuda_runtime.h>
 #include <cublas.h>

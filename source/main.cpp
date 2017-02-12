@@ -6,7 +6,7 @@
 int main(){
     try {
 
-        ulong seed = 0; // Should be passed through command line
+        ulong seed = 1; // Should be passed through command line
 
         InitializeCUDA();
 
@@ -22,7 +22,7 @@ int main(){
                         2);
 
 
-        ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc);
+        ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc, seed );
         alexnet.fit(train);
 
 

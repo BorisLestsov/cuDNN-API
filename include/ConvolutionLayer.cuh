@@ -4,6 +4,9 @@
 #include "Layer.cuh"
 #include "cstdlib"
 
+#include <random>
+
+
 class ConvolutionLayer: public Layer {
 
 public:
@@ -22,6 +25,8 @@ public:
     int out_N, out_C, out_H, out_W;  // FORWARD!!!
 
     size_t workspace_size_bytes;
+    size_t weights_length;
+    size_t output_length;
 
     float* h_weights, *h_bias;
     float* d_weights, *d_bias;
@@ -35,7 +40,7 @@ public:
     ~ConvolutionLayer();
 
 
-    void init_weights_random(/* rand function?*/);
+    void init_weights_random(std::mt19937& gen);
     void load_weights_from_file(const char* fname);
 
     // TODO: ???
@@ -45,7 +50,7 @@ private:
     cudnnHandle_t& cudnn_handle;
     void* _workspace;
 
-
+    float _randrange;
 };
 
 
