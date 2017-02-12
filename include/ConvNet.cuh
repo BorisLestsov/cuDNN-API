@@ -4,8 +4,9 @@
 #include "helper_functions.cuh"
 #include "TrainData.cuh"
 #include "TestData.h"
-#include "FullyConnectedLayer.cuh"
 #include "ConvolutionLayer.cuh"
+#include "PoolingLayer.cuh"
+#include "FullyConnectedLayer.cuh"
 
 #include <cudnn.h>
 #include <cuda_runtime.h>
@@ -25,8 +26,9 @@ public:
 
 private:
 
-    FullyConnectedLayer fc1;
     ConvolutionLayer conv1;
+    PoolingLayer pool1;
+    FullyConnectedLayer fc1;
 
     cudnnHandle_t& cudnn_handle;
     cublasHandle_t& cublas_handle;

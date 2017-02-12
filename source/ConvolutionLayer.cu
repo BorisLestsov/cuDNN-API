@@ -91,8 +91,8 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
     std::cout << "Workspace size: " << workspace_size_bytes << std::endl;
 
     checkCudaErrors( cudaMalloc(&_workspace, workspace_size_bytes) );
-    checkCudaErrors( cudaMalloc(&d_weights, sizeof(float) * in_C * kernel_size * kernel_size * out_C) );
-    checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * in_N * out_C * out_H * out_W) );
+    checkCudaErrors( cudaMalloc(&d_weights, sizeof(float) * in_N * in_C * kernel_size * kernel_size * out_H * out_W * out_C) );
+    checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * out_N * out_C * out_H * out_W) );
 
 }
 
