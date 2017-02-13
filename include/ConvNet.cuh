@@ -7,6 +7,7 @@
 #include "ConvolutionLayer.cuh"
 #include "PoolingLayer.cuh"
 #include "FullyConnectedLayer.cuh"
+#include "ActivationLayer.cuh"
 
 #include <random>
 
@@ -32,6 +33,7 @@ private:
     ConvolutionLayer conv1;
     PoolingLayer pool1;
     FullyConnectedLayer fc1;
+    ActivationLayer act1;
 
     cudnnHandle_t& cudnn_handle;
     cublasHandle_t& cublas_handle;

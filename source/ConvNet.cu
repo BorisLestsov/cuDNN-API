@@ -13,6 +13,7 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
         conv1(cudnn_handle_p, data_tensor_desc_p, 96, 11, 4),
         pool1(cudnn_handle_p, conv1.output_tensor_desc, 2, 2),
         fc1(cublas_handle_p, pool1.output_tensor_desc, 256),
+        act1(cudnn_handle_p, fc1.output_tensor_desc, CUDNN_ACTIVATION_RELU),
 
         gen(seed == 0 ? rd() : seed)
 {
@@ -22,17 +23,23 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
 
 
 void ConvNet::fit(TrainData& train){
-    while (!train.is_finished()){
-        std::cout << "Propagating next batch: " << train.get_n_read() << std::endl;
-        train.load_next_batch();
-        conv1.propagate_forward(train.d_img_data);
-        pool1.propagate_forward(conv1.d_output);
-        fc1.propagate_forward(pool1.d_output);
-        /*for (uint i = 0; i < train.loaded; ++i){
-            std::cout << train.ids_data[i] << "   " << train.lbl_data[i] << std::endl;
-        }
-        std::cout << std::endl;*/
-    }
+//    while (!train.is_finished()){
+//        std::cout << "Propagating next batch: " << train.get_n_read() << std::endl;
+//        train.load_next_batch();
+//        conv1.propagate_forward(train.d_img_data);
+//        pool1.propagate_forward(conv1.d_output);
+//        fc1.propagate_forward(pool1.d_output);
+//        /*for (uint i = 0; i < train.loaded; ++i){
+//            std::cout << train.ids_data[i] << "   " << train.lbl_data[i] << std::endl;
+//        }
+//        std::cout << std::endl;*/
+//    }
+    train.load_next_batch();
+    conv1.propagate_forward(train.d_img_data);
+    pool1.propagate_forward(conv1.d_output);
+    fc1.propagate_forward(pool1.d_output);
+
+    act1.propagate_forward(fc1.d_output);
 
 }
 

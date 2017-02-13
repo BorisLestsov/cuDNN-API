@@ -17,16 +17,23 @@ FullyConnectedLayer::FullyConnectedLayer(cublasHandle_t& cublas_handle_p,
 
     n_inp = in_C * in_H * in_W;
     out_C = 1;
-    out_N = 1;
-    out_H = n_outp;
-    out_W = in_N;       // in_n == batch_size !
+    out_N = in_N;
+    out_H = 1;
+    out_W = n_outp;
+
+    checkCudnnErrors( cudnnCreateTensorDescriptor(&output_tensor_desc) );
+    checkCudnnErrors( cudnnSetTensor4dDescriptor(output_tensor_desc,
+                                                 CUDNN_TENSOR_NCHW,
+                                                 inp_datatype,
+                                                 out_N, out_C,
+                                                 out_H, out_W) );
 
     h_weights = (float*) malloc(n_inp * n_outp * sizeof(float));
     h_bias = (float*) malloc(n_outp * sizeof(float));
 
     checkCudaErrors( cudaMalloc((void**) &d_weights, n_inp * n_outp * sizeof(float)) );
     checkCudaErrors( cudaMalloc((void**) &d_bias, n_outp * sizeof(float)) );
-    checkCudaErrors( cudaMalloc((void**) &d_output, out_H * out_W * sizeof(float)) );
+    checkCudaErrors( cudaMalloc((void**) &d_output, out_N * out_W * sizeof(float)) );
 
     h_ones = (float*) malloc(out_W * in_N * sizeof(float));
     checkCudaErrors( cudaMalloc((void**) &d_ones, out_W * in_N *sizeof(float)) );
@@ -71,21 +78,22 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
+
     checkCublasErrors(cublasSgemm(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_N,
-                                n_outp, in_N, n_inp,
-                                &alpha,
-                                d_weights, n_inp,
-                                d_x, n_inp,
-                                &beta,
-                                d_output, n_outp));
+                                  n_outp, in_N, n_inp,
+                                  &alpha,
+                                  d_weights, n_inp,
+                                  d_x, n_inp,
+                                  &beta,
+                                  d_output, n_outp));
 
     checkCublasErrors(cublasSgemm(cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N,
-                                n_outp, in_N, 1,
-                                &alpha,
-                                d_bias, n_outp,
-                                d_ones, 1,
-                                &alpha,
-                                d_output, n_outp));
+                                  n_outp, in_N, 1,
+                                  &alpha,
+                                  d_bias, n_outp,
+                                  d_ones, 1,
+                                  &alpha,
+                                  d_output, n_outp));
 
 }
 
@@ -94,16 +102,22 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
 /*
 
  Working Test
- void FullyConnectedLayer::propagate_forward(float* d_x) {
+
+void FullyConnectedLayer::propagate_forward(float* d_x) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
-    //
-    out_H = 3;
+
+
     n_inp = 2;
     n_outp = 3;
+
+    out_H = 1;
+    out_W = n_outp;
+
     in_N = 4;
-    out_W = in_N;
+    out_N = 4;
+
 
 
     uint i, j;
@@ -126,14 +140,14 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
     }
 
     float *h_x = (float *) malloc(sizeof(float) * n_inp * in_N);
-    for (i = 0; i < in_N; ++i){
-        for (j = 0; j < n_inp; ++j){
+    for (i = 0; i < in_N; ++i) {
+        for (j = 0; j < n_inp; ++j) {
             h_x[i * n_inp + j] = 2 + i * n_inp + j;
         }
     }
     std::cout << "h_x:" << std::endl;
-    for (i = 0; i < in_N; ++i){
-        for (j = 0; j < n_inp; ++j){
+    for (i = 0; i < in_N; ++i) {
+        for (j = 0; j < n_inp; ++j) {
             std::cout << h_x[i * n_inp + j] << "    ";
         }
         std::cout << std::endl;
@@ -147,34 +161,34 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
     checkCudaErrors(cudaMemcpy(d_bias, h_bias,
                                sizeof(float) * n_outp, cudaMemcpyHostToDevice));
 
+
     checkCublasErrors(cublasSgemm(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_N,
-                                n_outp, in_N, n_inp,
-                                &alpha,
-                                d_weights, n_inp,
-                                d_x, n_inp,
-                                &beta,
-                                d_output, n_outp));
+                                  n_outp, in_N, n_inp,
+                                  &alpha,
+                                  d_weights, n_inp,
+                                  d_x, n_inp,
+                                  &beta,
+                                  d_output, n_outp));
 
     checkCublasErrors(cublasSgemm(cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N,
-                                n_outp, in_N, 1,
-                                &alpha,
-                                d_bias, n_outp,
-                                d_ones, 1,
-                                &alpha,
-                                d_output, n_outp));
+                                  n_outp, in_N, 1,
+                                  &alpha,
+                                  d_bias, n_outp,
+                                  d_ones, 1,
+                                  &alpha,
+                                  d_output, n_outp));
 
-    float *h_output = (float *) malloc(out_H * out_W * sizeof(float));
+
+    float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
     checkCudaErrors(cudaMemcpy(h_output, d_output,
-                               out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
+                               out_N * out_W * sizeof(float), cudaMemcpyDeviceToHost));
     std::cout << "res:" << std::endl;
-    for (i = 0; i < out_W; ++i){
-        for (j = 0; j < out_H; ++j){
-            std::cout << h_output[i * out_H + j] << "    ";
-        }
-        std::cout << std::endl;
+
+    for (j = 0; j < out_N * out_W; ++j) {
+        std::cout << h_output[j] << "    ";
     }
+    std::cout << std::endl;
+
 
 }
-
-
  */

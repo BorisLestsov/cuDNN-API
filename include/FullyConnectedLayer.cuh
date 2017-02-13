@@ -7,6 +7,7 @@
 class FullyConnectedLayer: public Layer {
 public:
     cudnnTensorDescriptor_t input_tensor_desc;
+    cudnnTensorDescriptor_t output_tensor_desc;
 
     cudnnDataType_t inp_datatype;
 
