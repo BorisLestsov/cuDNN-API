@@ -122,6 +122,7 @@ void ConvolutionLayer::propagate_forward(float* d_x){
     float alpha = 1.0f;
     float beta = 0.0f;
 
+
     checkCudnnErrors( cudnnConvolutionForward(cudnn_handle, &alpha, input_tensor_desc,
                                               d_x, filter_desc, d_weights, conv_desc,
                                               algo, _workspace, workspace_size_bytes, &beta,

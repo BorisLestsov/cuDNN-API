@@ -37,16 +37,12 @@ SoftmaxLayer::~SoftmaxLayer() {
 void SoftmaxLayer::propagate_forward(float* d_x){
     float alpha = 1.0f, beta = 0.0f;
 
-
     float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
-//    checkCudaErrors(cudaMemcpy(h_x, d_x,
-//                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-//    std::cout << "res:" << std::endl;
-//
-//    for (uint j = 0; j < in_N * in_C * in_H * in_W; ++j) {
-//        std::cout << h_x[j] << "    ";
-//    }
-//    std::cout << std::endl;
+    checkCudaErrors(cudaMemcpy(h_x, d_x,
+                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
+
+
+
 
     checkCudnnErrors( cudnnSoftmaxForward(cudnn_handle,
                                           CUDNN_SOFTMAX_ACCURATE,
@@ -59,13 +55,15 @@ void SoftmaxLayer::propagate_forward(float* d_x){
 
     float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
     checkCudaErrors(cudaMemcpy(h_output, d_output,
-                               out_N * out_W * sizeof(float), cudaMemcpyDeviceToHost));
+                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
     std::cout << "Softmax:" << std::endl;
 
-    for (uint j = 0; j < out_N * out_W; ++j) {
-        std::cout << h_output[j] << "    ";
+    for (uint i = 0; i < out_N; ++i) {
+        std::cout << "    EXAMPLE" << std::endl;
+        for (uint j = 0; j < out_W; ++j) {
+            std::cout << h_output[i*out_W + j] << "    ";
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
-
 }
 

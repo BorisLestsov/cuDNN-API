@@ -47,6 +47,7 @@ PoolingLayer::~PoolingLayer() {
 
 void PoolingLayer::propagate_forward(float* d_x){
     float alpha = 1.0f, beta = 0.0f;
+
     checkCudnnErrors( cudnnPoolingForward(cudnn_handle,
                                           pooling_desc,
                                           &alpha,
