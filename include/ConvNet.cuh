@@ -4,10 +4,12 @@
 #include "helper_functions.cuh"
 #include "TrainData.cuh"
 #include "TestData.h"
+
 #include "ConvolutionLayer.cuh"
 #include "PoolingLayer.cuh"
 #include "FullyConnectedLayer.cuh"
 #include "ActivationLayer.cuh"
+#include "SoftmaxLayer.cuh"
 
 #include <random>
 
@@ -34,6 +36,9 @@ private:
     PoolingLayer pool1;
     FullyConnectedLayer fc1;
     ActivationLayer act1;
+    FullyConnectedLayer fc2;
+    ActivationLayer act2;
+    SoftmaxLayer sm;
 
     cudnnHandle_t& cudnn_handle;
     cublasHandle_t& cublas_handle;

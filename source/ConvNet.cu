@@ -14,11 +14,15 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
         pool1(cudnn_handle_p, conv1.output_tensor_desc, 2, 2),
         fc1(cublas_handle_p, pool1.output_tensor_desc, 256),
         act1(cudnn_handle_p, fc1.output_tensor_desc, CUDNN_ACTIVATION_RELU),
+        fc2(cublas_handle_p, act1.output_tensor_desc, 80),
+        act2(cudnn_handle_p, fc2.output_tensor_desc, CUDNN_ACTIVATION_RELU),
+        sm(cudnn_handle_p, act2.output_tensor_desc),
 
         gen(seed == 0 ? rd() : seed)
 {
     conv1.init_weights_random(gen);
     fc1.init_weights_random(gen);
+    fc2.init_weights_random(gen);
 }
 
 
@@ -38,8 +42,10 @@ void ConvNet::fit(TrainData& train){
     conv1.propagate_forward(train.d_img_data);
     pool1.propagate_forward(conv1.d_output);
     fc1.propagate_forward(pool1.d_output);
-
     act1.propagate_forward(fc1.d_output);
+    fc2.propagate_forward(act1.d_output);
+    act2.propagate_forward(fc2.d_output);
+    sm.propagate_forward(act2.d_output);
 
 }
 
