@@ -34,11 +34,16 @@ def main():
     lb_f = open(labels_dataset_nm, 'wb+')
     lb_f.truncate()
 
-    img_names = os.listdir(picDir);
+    n_cats = max([cat['id'] for cat in coco.loadCats(coco.getCatIds())])
+
+    img_names = os.listdir(picDir)
     metadata = np.array([len(img_names), IMGSIZE, IMGSIZE, 3], dtype=np.int32)
     print metadata
-
     im_f.write(metadata.tobytes())
+
+    metadata_lbls = np.array([n_cats], dtype=np.int32)
+    print metadata_lbls
+    lb_f.write(metadata_lbls.tobytes())
 
     for filenm in img_names:
         # Label preprocessing
@@ -53,8 +58,9 @@ def main():
         myImgAnns = coco.loadAnns(myImgAnnIds)
         max_area_idx = np.argmax([ann['area'] for ann in myImgAnns])
         cat = myImgAnns[max_area_idx]['category_id']
-        cat_tmp = np.array([cat], dtype=np.float32)
-        print coco.loadCats(cat)[0]['name'], "-", cat, " - ", cat_tmp
+        cat_tmp = np.zeros(shape=[n_cats+1], dtype=np.float32)
+        cat_tmp[cat] = 1.0
+        print coco.loadCats(cat)[0]['name'], "-", cat
         lb_f.write(cat_tmp.tobytes())
         
 

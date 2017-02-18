@@ -32,12 +32,8 @@ public:
 
 private:
 
-    ConvolutionLayer conv1;
-    PoolingLayer pool1;
+
     FullyConnectedLayer fc1;
-    ActivationLayer act1;
-    FullyConnectedLayer fc2;
-    ActivationLayer act2;
     SoftmaxLayer sm;
 
     cudnnHandle_t& cudnn_handle;

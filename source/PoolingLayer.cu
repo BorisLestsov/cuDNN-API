@@ -48,6 +48,10 @@ PoolingLayer::~PoolingLayer() {
 void PoolingLayer::propagate_forward(float* d_x){
     float alpha = 1.0f, beta = 0.0f;
 
+    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+    checkCudaErrors(cudaMemcpy(h_x, d_x,
+                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
+
     checkCudnnErrors( cudnnPoolingForward(cudnn_handle,
                                           pooling_desc,
                                           &alpha,

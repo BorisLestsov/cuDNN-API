@@ -78,6 +78,10 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
+    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+    checkCudaErrors(cudaMemcpy(h_x, d_x,
+                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
+
     checkCublasErrors(cublasSgemm(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_N,
                                   n_outp, in_N, n_inp,
                                   &alpha,

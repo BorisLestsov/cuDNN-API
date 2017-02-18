@@ -6,6 +6,8 @@
 class TrainData: public Data {
 public:
 
+    int n_labels;
+
     float* lbl_data;
     float* d_lbl_data;
 

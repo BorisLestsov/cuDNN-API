@@ -15,9 +15,11 @@ public:
     const int output_tensor_dims = 4;
 
     float* d_output;
+    float* d_dx;
 
     int in_N, in_C, in_H, in_W;
-    int out_N, out_C, out_H, out_W;  // FORWARD!!!
+    int out_N, out_C, out_H, out_W;
+    int n_labels;
 
     SoftmaxLayer(cudnnHandle_t& cudnn_handle_p);
     SoftmaxLayer(cudnnHandle_t& cudnn_handle_p,
@@ -26,12 +28,19 @@ public:
     ~SoftmaxLayer();
 
     void propagate_forward(float* d_x);
+    void propagate_backward(float* d_targ, float* d_dx);
 
 private:
     cudnnHandle_t& cudnn_handle;
 
+    static inline unsigned int _ceil(unsigned int nominator, unsigned int denominator) {
+        return (nominator + denominator - 1) / denominator;
+    }
 
 };
+
+
+__global__ void compute_softmax_loss(float* target, float* d_y, float* d_dy);
 
 
 #endif //CUDNN_PROJ_SOFTMAXLAYER_H

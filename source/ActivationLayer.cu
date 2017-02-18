@@ -32,6 +32,7 @@ ActivationLayer::ActivationLayer(cudnnHandle_t& cudnn_handle_p,
                                                  out_H, out_W) );
 
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * out_N * out_C * out_H * out_W) );
+    checkCudaErrors( cudaMalloc(&d_dx, sizeof(float) * in_N * in_C * in_H * in_W) );
 
 }
 
@@ -40,11 +41,16 @@ ActivationLayer::~ActivationLayer() {
     cudnnDestroyTensorDescriptor(output_tensor_desc);
 
     checkCudaErrors( cudaFree(d_output) );
+    checkCudaErrors( cudaFree(d_dx) );
 }
 
 
 void ActivationLayer::propagate_forward(float* d_x){
     float alpha = 1.0f, beta = 0.0f;
+
+    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+    checkCudaErrors(cudaMemcpy(h_x, d_x,
+                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
 
     checkCudnnErrors( cudnnActivationForward(cudnn_handle,
                                              act_desc,
@@ -55,5 +61,28 @@ void ActivationLayer::propagate_forward(float* d_x){
                                              output_tensor_desc,
                                              d_output) );
 
+    checkCudaErrors(cudaMemcpy(h_x, d_output,
+                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
+
 }
 
+void ActivationLayer::propagate_backward(float* d_dy, float* d_x){
+    float alpha = 1.0f, beta = 0.0f;
+
+    /*float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+    checkCudaErrors(cudaMemcpy(h_x, d_x,
+                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
+*/
+    checkCudnnErrors(cudnnActivationBackward(cudnn_handle,
+                                             act_desc,
+                                             &alpha,
+                                             output_tensor_desc, d_output,
+                                             output_tensor_desc, d_dy,
+                                             input_tensor_desc, d_x,
+                                             &beta,
+                                             input_tensor_desc, d_dx));
+
+    /*checkCudaErrors(cudaMemcpy(h_x, d_output,
+                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
+*/
+}
