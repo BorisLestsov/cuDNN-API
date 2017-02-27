@@ -26,7 +26,7 @@ SoftmaxLayer::SoftmaxLayer(cudnnHandle_t& cudnn_handle_p,
                                                  out_H, out_W) );
 
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * out_N * out_C * out_H * out_W) );
-    checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * in_N * in_C * in_H * in_W) );
+    checkCudaErrors( cudaMalloc(&d_dx, sizeof(float) * in_N * in_C * in_H * in_W) );
 
 }
 
@@ -41,12 +41,17 @@ SoftmaxLayer::~SoftmaxLayer() {
 void SoftmaxLayer::propagate_forward(float* d_x){
     float alpha = 1.0f, beta = 0.0f;
 
-    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+    /*float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
     checkCudaErrors(cudaMemcpy(h_x, d_x,
                                in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
+*/
 
 
-
+    /*
+     * float scalVal = 1.0f / static_cast<float>(m_batchSize);
+     * checkCudaErrors(cublasSscal(cublasHandle, ref_fc2.outputs * m_batchSize, &scalVal, dloss_data, 1));
+     *
+     */
 
     checkCudnnErrors( cudnnSoftmaxForward(cudnn_handle,
                                           CUDNN_SOFTMAX_ACCURATE,

@@ -11,7 +11,7 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
         data_tensor_desc(data_tensor_desc_p),
 
 
-        fc1(cublas_handle_p, data_tensor_desc_p, 10),
+        fc1(cublas_handle_p, data_tensor_desc_p, 90),
         sm(cudnn_handle_p, fc1.output_tensor_desc),
 
         gen(seed == 0 ? rd() : seed)
@@ -37,8 +37,8 @@ void ConvNet::fit(TrainData& train){
         fc1.propagate_forward(train.d_img_data);
         sm.propagate_forward(fc1.d_output);
 
-        sm.propagate_backward(fc1.d_output, train.d_labels_data);
-        fc1.propagate_backward(sm.d_dx);
+        sm.propagate_backward(train.d_lbl_data, fc1.d_output);
+        fc1.propagate_backward(sm.d_dx, train.d_img_data);
         /*checkCudaErrors(cudaMemcpy(d_y, fc1.d_output,
                                    in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToDevice));
 */

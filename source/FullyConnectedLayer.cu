@@ -35,6 +35,10 @@ FullyConnectedLayer::FullyConnectedLayer(cublasHandle_t& cublas_handle_p,
     checkCudaErrors( cudaMalloc((void**) &d_bias, n_outp * sizeof(float)) );
     checkCudaErrors( cudaMalloc((void**) &d_output, out_N * out_W * sizeof(float)) );
 
+    checkCudaErrors( cudaMalloc((void**) &d_grad_w, n_inp * n_outp * sizeof(float)) );
+    checkCudaErrors( cudaMalloc((void**) &d_grad_b, n_outp * sizeof(float)) );
+    checkCudaErrors( cudaMalloc((void**) &d_dx, n_inp * in_N * sizeof(float)) );
+
     h_ones = (float*) malloc(out_W * in_N * sizeof(float));
     checkCudaErrors( cudaMalloc((void**) &d_ones, out_W * in_N *sizeof(float)) );
     std::fill_n(h_ones, out_W * in_N, 1.0f);
@@ -51,6 +55,11 @@ FullyConnectedLayer::~FullyConnectedLayer() {
     checkCudaErrors( cudaFree(d_weights) );
     checkCudaErrors( cudaFree(d_bias) );
     checkCudaErrors( cudaFree(d_output) );
+
+    checkCudaErrors( cudaFree(d_grad_w) );
+    checkCudaErrors( cudaFree(d_grad_b) );
+    checkCudaErrors( cudaFree(d_dx) );
+
     checkCudaErrors( cudaFree(d_ones) );
 }
 
@@ -78,10 +87,10 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
-    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+    /*float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
     checkCudaErrors(cudaMemcpy(h_x, d_x,
                                in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-
+*/
     checkCublasErrors(cublasSgemm(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_N,
                                   n_outp, in_N, n_inp,
                                   &alpha,
@@ -101,6 +110,46 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
 }
 
 
+void FullyConnectedLayer::propagate_backward(float* d_dy, float* d_x) {
+    float alpha = 1.0f;
+    float beta = 0.0f;
+
+    /*float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+    checkCudaErrors(cudaMemcpy(h_x, d_x,
+                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
+*/
+
+    checkCublasErrors(cublasSgemm(cublas_handle,
+                                  CUBLAS_OP_N, CUBLAS_OP_T,
+                                  n_inp, n_outp, in_N,
+                                  &alpha,
+                                  d_x, n_inp,
+                                  d_dy, n_outp,
+                                  &beta,
+                                  d_grad_w, n_inp));
+
+    // Compute derivative with respect to bias: gfc2bias = dfc2smax * 1_vec
+    checkCublasErrors(cublasSgemv(cublas_handle,
+                                  CUBLAS_OP_N,
+                                  n_outp, in_N,
+                                  &alpha,
+                                  d_dy, n_outp,
+                                  d_ones, 1,
+                                  &beta,
+                                  d_grad_b, 1));
+
+    // Compute derivative with respect to data (for previous layer): pfc2*dfc2smax (500x10*10xN)
+    checkCublasErrors(cublasSgemm(cublas_handle,
+                                  CUBLAS_OP_N, CUBLAS_OP_N,
+                                  n_inp, in_N, n_outp,
+                                  &alpha,
+                                  d_weights, n_inp,
+                                  d_dy, n_outp,
+                                  &beta,
+                                  d_dx, n_inp));
+
+
+}
 
 
 

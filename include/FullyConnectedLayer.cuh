@@ -20,6 +20,9 @@ public:
 
     float* d_output;
 
+    float* d_grad_w, *d_grad_b;
+    float* d_dx;
+
 
     FullyConnectedLayer(cublasHandle_t& cudnn_handle_p,
                         cudnnTensorDescriptor_t input_tensor_desc_p, size_t n_outputs_p);
@@ -31,6 +34,7 @@ public:
 
     // TODO: ???
     void propagate_forward(float* d_x);
+    void propagate_backward(float* d_dy, float* d_x);
 
 private:
     cublasHandle_t& cublas_handle;
