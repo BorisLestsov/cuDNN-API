@@ -19,7 +19,7 @@ int main(){
                         "dataset/imgdata.dat",
                         "dataset/nmdata.dat",
                         "dataset/lbldata.dat",
-                        2);
+                        4);
 
 
         ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc, seed );

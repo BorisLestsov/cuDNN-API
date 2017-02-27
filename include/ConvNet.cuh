@@ -10,6 +10,7 @@
 #include "FullyConnectedLayer.cuh"
 #include "ActivationLayer.cuh"
 #include "SoftmaxLayer.cuh"
+#include "MSELayer.cuh"
 
 #include <random>
 
@@ -35,6 +36,8 @@ private:
 
     FullyConnectedLayer fc1;
     SoftmaxLayer sm;
+    MSELayer mse;
+
 
     cudnnHandle_t& cudnn_handle;
     cublasHandle_t& cublas_handle;
