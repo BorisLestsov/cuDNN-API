@@ -21,6 +21,7 @@ public:
 
     void load_next_batch() override;
     void copy_batch_to_GPU() override;
+    void reset();
 
 private:
 

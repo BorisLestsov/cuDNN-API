@@ -46,11 +46,11 @@ void TrainData::load_next_batch() {
     if (bytes_read != ex_to_read * n_labels * sizeof(float))
         throw std::runtime_error("Labels data read error");
 
-    _in_f_ids.read( (char*) ids_data, ex_to_read * sizeof(int32_t) );
+    /*_in_f_ids.read( (char*) ids_data, ex_to_read * sizeof(int32_t) );
     bytes_read = _in_f_ids.gcount();
     if (bytes_read != ex_to_read * sizeof(int32_t))
         throw std::runtime_error("Ids data read error");
-
+*/
     n_read += ex_to_read;
     loaded = ex_to_read;
 
@@ -61,4 +61,13 @@ void TrainData::copy_batch_to_GPU(){
                                      loaded * _ex_size_bytes, cudaMemcpyHostToDevice) );
     checkCudaErrors( cudaMemcpyAsync(d_lbl_data, lbl_data,
                                     sizeof(float) * n_labels * loaded, cudaMemcpyHostToDevice) );
+}
+
+void TrainData::reset(){
+    _in_f_labels.seekg(sizeof(int32_t), _in_f_labels.beg);
+    _in_f_data.seekg(4*sizeof(int32_t), _in_f_data.beg);
+    _in_f_ids.seekg(0, _in_f_ids.beg);
+    n_read = 0;
+    loaded = 0;
+
 }

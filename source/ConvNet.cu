@@ -21,7 +21,7 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
 }
 
 
-void ConvNet::fit(TrainData& train, uint epoches, float lr){
+void ConvNet::fit(TrainData& train, int epoches, float lr){
 
     /*float* h_dy = (float*) calloc(sm.out_N * sm.out_C * sm.out_H * sm.out_W, sizeof(float));
     float* lbls = (float*) calloc(sm.out_N * sm.out_C * sm.out_H * sm.out_W, sizeof(float));
@@ -66,6 +66,7 @@ void ConvNet::fit(TrainData& train, uint epoches, float lr){
                                        in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToDevice));
     */
         }
+        train.reset();
     }
 
 }
