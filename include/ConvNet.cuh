@@ -11,6 +11,7 @@
 #include "ActivationLayer.cuh"
 #include "SoftmaxLayer.cuh"
 #include "MSELayer.cuh"
+#include "NegLogLikelihoodLayer.cuh"
 
 #include <random>
 
@@ -37,7 +38,7 @@ private:
     FullyConnectedLayer fc1;
     FullyConnectedLayer fc2;
     SoftmaxLayer sm;
-    MSELayer mse;
+    NegLogLikelihoodLayer nll;
 
 
     cudnnHandle_t& cudnn_handle;
