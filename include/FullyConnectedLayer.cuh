@@ -13,7 +13,7 @@ public:
 
     int in_N, in_C, in_H, in_W;
     size_t n_inp, n_outp;
-    int out_N, out_C, out_H, out_W;  // FORWARD!!!
+    int out_N, out_C, out_H, out_W;
 
     float* h_weights, *h_bias;
     float* d_weights, *d_bias;
@@ -32,9 +32,9 @@ public:
     void init_weights_random(std::mt19937& gen);
     void load_weights_from_file(const char* fname);
 
-    // TODO: ???
     void propagate_forward(float* d_x);
     void propagate_backward(float* d_dy, float* d_x);
+    void update_weights(float lr);
 
 private:
     cublasHandle_t& cublas_handle;

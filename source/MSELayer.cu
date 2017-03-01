@@ -50,9 +50,12 @@ void MSELayer::propagate_forward(float* d_t, float* d_x){
                                out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
     std::cout << "MSE:" << std::endl;
 
+    float batch_loss = 0.0;
     for (uint i = 0; i < out_N; ++i) {
-        std::cout << "    Batch loss:" << h_output[i] << std::endl;
+        batch_loss += h_output[i];
     }
+
+    std::cout << "    Batch loss:" << batch_loss << std::endl;
 }
 
 

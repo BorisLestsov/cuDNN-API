@@ -151,6 +151,17 @@ void FullyConnectedLayer::propagate_backward(float* d_dy, float* d_x) {
 
 }
 
+void FullyConnectedLayer::update_weights(float lr){
+    float alpha = lr;
+
+    int weights_length = n_inp * n_outp;
+    int bias_length = n_outp;
+
+    checkCublasErrors(cublasSaxpy(cublas_handle, weights_length,
+                                  &alpha, d_grad_w, 1, d_weights, 1));
+    checkCublasErrors(cublasSaxpy(cublas_handle, bias_length,
+                                  &alpha, d_grad_b, 1, d_bias, 1));
+}
 
 
 

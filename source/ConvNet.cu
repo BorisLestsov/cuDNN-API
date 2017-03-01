@@ -45,7 +45,7 @@ void ConvNet::fit(TrainData& train, int epoches, float lr){
     for (uint ep = 0; ep < epoches; ++ep) {
         std::cout << "Epoch: " << ep << std::endl;
         while (!train.is_finished()) {
-            std::cout << "Propagating next batch: " << train.get_n_read() << std::endl;
+            //std::cout << "Propagating next batch: " << train.get_n_read() << std::endl;
 
             train.load_next_batch();
             train.copy_batch_to_GPU();
@@ -56,6 +56,8 @@ void ConvNet::fit(TrainData& train, int epoches, float lr){
 
             mse.propagate_backward(train.d_lbl_data, fc1.d_output);
             fc1.propagate_backward(mse.d_dx, train.d_img_data);
+
+            fc1.update_weights(lr);
 
             //fc1.propagate_forward(train.d_img_data);
             //sm.propagate_forward(fc1.d_output);
