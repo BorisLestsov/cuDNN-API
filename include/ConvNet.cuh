@@ -35,6 +35,7 @@ private:
 
 
     FullyConnectedLayer fc1;
+    FullyConnectedLayer fc2;
     SoftmaxLayer sm;
     MSELayer mse;
 

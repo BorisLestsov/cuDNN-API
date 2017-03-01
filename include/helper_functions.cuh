@@ -9,6 +9,7 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include <stdexcept>
 
 
 inline void InitializeCUDA(){

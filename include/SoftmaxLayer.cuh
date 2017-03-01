@@ -40,7 +40,4 @@ private:
 };
 
 
-__global__ void compute_softmax_loss(float* target, float* d_y, float* d_dy);
-
-
 #endif //CUDNN_PROJ_SOFTMAXLAYER_H

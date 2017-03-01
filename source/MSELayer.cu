@@ -48,7 +48,6 @@ void MSELayer::propagate_forward(float* d_t, float* d_x){
     float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
     checkCudaErrors(cudaMemcpy(h_output, d_output,
                                out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
-    std::cout << "MSE:" << std::endl;
 
     float batch_loss = 0.0;
     for (uint i = 0; i < out_N; ++i) {
