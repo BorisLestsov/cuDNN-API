@@ -13,8 +13,8 @@ MSELayer::MSELayer(cudnnHandle_t& cudnn_handle_p,
                                                  &inp_strid, &inp_strid, &inp_strid, &inp_strid) );
 
     out_N = in_N;
-    out_C = in_C;
-    out_H = in_H;
+    out_C = 1;
+    out_H = 1;
     out_W = 1;
 
     n_labels = in_C * in_H * in_W;
@@ -40,14 +40,7 @@ MSELayer::~MSELayer() {
 
 
 void MSELayer::propagate_forward(float* d_t, float* d_x){
-    float alpha = 1.0f, beta = 0.0f;
 
-//    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
-//    checkCudaErrors(cudaMemcpy(h_x, d_x,
-//                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-
-
-    int BW = 128;
     compute_mse<<<_ceil(in_N, BW), BW>>>(d_t, d_x, n_labels, in_N, d_output);
 
 
@@ -58,37 +51,38 @@ void MSELayer::propagate_forward(float* d_t, float* d_x){
     std::cout << "MSE:" << std::endl;
 
     for (uint i = 0; i < out_N; ++i) {
-        std::cout << "    Batch:" << h_output[i] << std::endl;
+        std::cout << "    Batch loss:" << h_output[i] << std::endl;
     }
 }
 
 
-void MSELayer::propagate_backward(float* d_targ, float* d_dx){
-    float alpha = 1.0f, beta = 0.0f;
+void MSELayer::propagate_backward(float* d_t, float* d_y){
 
-    /*float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
-    checkCudaErrors(cudaMemcpy(h_x, d_x,
-                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-
-
-    int BW = 128;
-
-    checkCudaErrors(cudaMemcpyAsync(d_dx,
-                                    d_output,
-                                    sizeof(float) * out_N * n_labels, cudaMemcpyDeviceToDevice));
-
-    //compute_mse<<<_ceil(out_N, BW), BW>>>(d_targ, n_labels, out_N, d_dx);
+    compute_mse_loss<<<_ceil(out_N, BW), BW>>>(d_t, d_y, n_labels, in_N, d_dx);
 
 
 
-    /*float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
-    checkCudaErrors(cudaMemcpy(h_output, d_output,
-                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
-    */
+//    float *h_output = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+//    checkCudaErrors(cudaMemcpy(h_output, d_dx,
+//                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
+//    std::cout << "MSE:" << std::endl;
+//
+//    for (uint i = 0; i < in_N; ++i) {
+//        std::cout << "    Batch gradient:" << std::endl;
+//        for (uint j = 0; j < in_C*in_H*in_W; ++j) {
+//            std::cout << h_output[i*n_labels + j] << "    ";
+//        }
+//        std::cout << std::endl;
+//    }
 }
 
 
-__global__ void compute_mse(const float *labels, const float* x, int num_labels, int batch_size, float* losses){
+__global__ void compute_mse(const float *labels,
+                            const float* x,
+                            int num_labels,
+                            int batch_size,
+                            float* losses)
+{
     int batch_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (batch_idx >= batch_size)
         return;
@@ -101,4 +95,22 @@ __global__ void compute_mse(const float *labels, const float* x, int num_labels,
         loss += lbl_diff * lbl_diff;
     }
     losses[batch_idx] = loss;
+}
+
+
+__global__ void compute_mse_loss(const float *labels,
+                                 const float* y,
+                                 int num_labels,
+                                 int batch_size,
+                                 float* grad)
+{
+    int batch_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (batch_idx >= batch_size)
+        return;
+
+
+    int i, stride = batch_idx * num_labels;
+    for (i = 0; i < num_labels; ++i){
+        grad[stride + i] = labels[stride + i] - y[stride + i];
+    }
 }

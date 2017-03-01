@@ -28,8 +28,8 @@ public:
             cudnnTensorDescriptor_t data_tensor_desc_p,
             uint seed = 0);
 
-    void fit(TrainData&);
-    char* predict(TestData&);
+    void fit(TrainData& data, uint epoches, float lr);
+    char* predict(TestData& data);
 
 private:
 

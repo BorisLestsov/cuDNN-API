@@ -14,5 +14,8 @@ class Layer {
     /* ... */
 };
 
+class MetricLayer: public Layer {
+    /* ... */
+};
 
 #endif //CUDNN_PROJ_LAYER_H

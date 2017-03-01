@@ -5,7 +5,7 @@
 #include "Layer.cuh"
 
 
-class MSELayer: public Layer {
+class MSELayer: public MetricLayer {
 public:
     cudnnTensorDescriptor_t input_tensor_desc;
     cudnnTensorDescriptor_t output_tensor_desc;
@@ -33,6 +33,9 @@ public:
 private:
     cudnnHandle_t& cudnn_handle;
 
+
+    const int BW = 128;
+
     static inline unsigned int _ceil(unsigned int nominator, unsigned int denominator) {
         return (nominator + denominator - 1) / denominator;
     }
@@ -40,7 +43,16 @@ private:
 };
 
 
-__global__ void compute_mse(const float *labels, const float* x, int num_labels, int batch_size, float* losses);
+__global__ void compute_mse(const float *labels,
+                            const float* x,
+                            int num_labels,
+                            int batch_size,
+                            float* losses);
 
+__global__ void compute_mse_loss(const float *labels,
+                                 const float* y,
+                                 int num_labels,
+                                 int batch_size,
+                                 float* grad);
 
 #endif //CUDNN_PROJ_MSELAYER_H

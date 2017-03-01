@@ -22,8 +22,8 @@ int main(){
                         4);
 
 
-        ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc, seed );
-        alexnet.fit(train);
+        ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc, seed);
+        alexnet.fit(train, 2, 1e-5);
 
 
         checkCudnnErrors(cudnnDestroy(cudnn_handle));

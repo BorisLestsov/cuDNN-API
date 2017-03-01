@@ -21,7 +21,7 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
 }
 
 
-void ConvNet::fit(TrainData& train){
+void ConvNet::fit(TrainData& train, uint epoches, float lr){
 
     /*float* h_dy = (float*) calloc(sm.out_N * sm.out_C * sm.out_H * sm.out_W, sizeof(float));
     float* lbls = (float*) calloc(sm.out_N * sm.out_C * sm.out_H * sm.out_W, sizeof(float));
@@ -42,25 +42,30 @@ void ConvNet::fit(TrainData& train){
 //    checkCudaErrors(cudaMemcpy(d_t, t,
 //                               4 * sizeof(float), cudaMemcpyHostToDevice));
 
-    while (!train.is_finished()){
-        std::cout << "Propagating next batch: " << train.get_n_read() << std::endl;
+    for (uint ep = 0; ep < epoches; ++ep) {
+        std::cout << "Epoch: " << ep << std::endl;
+        while (!train.is_finished()) {
+            std::cout << "Propagating next batch: " << train.get_n_read() << std::endl;
 
-        train.load_next_batch();
-        train.copy_batch_to_GPU();
-
-
-        fc1.propagate_forward(train.d_img_data);
-        mse.propagate_forward(train.d_lbl_data, fc1.d_output);
+            train.load_next_batch();
+            train.copy_batch_to_GPU();
 
 
-        //fc1.propagate_forward(train.d_img_data);
-        //sm.propagate_forward(fc1.d_output);
+            fc1.propagate_forward(train.d_img_data);
+            mse.propagate_forward(train.d_lbl_data, fc1.d_output);
 
-        //sm.propagate_backward(train.d_lbl_data, fc1.d_output);
-        //fc1.propagate_backward(sm.d_dx, train.d_img_data);
-        /*checkCudaErrors(cudaMemcpy(d_y, fc1.d_output,
-                                   in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToDevice));
-*/
+            mse.propagate_backward(train.d_lbl_data, fc1.d_output);
+            fc1.propagate_backward(mse.d_dx, train.d_img_data);
+
+            //fc1.propagate_forward(train.d_img_data);
+            //sm.propagate_forward(fc1.d_output);
+
+            //sm.propagate_backward(train.d_lbl_data, fc1.d_output);
+            //fc1.propagate_backward(sm.d_dx, train.d_img_data);
+            /*checkCudaErrors(cudaMemcpy(d_y, fc1.d_output,
+                                       in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToDevice));
+    */
+        }
     }
 
 }
