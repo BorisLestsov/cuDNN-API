@@ -34,8 +34,9 @@ public:
 
 private:
 
-
+    ConvolutionLayer conv1;
     FullyConnectedLayer fc1;
+    ActivationLayer act1;
     FullyConnectedLayer fc2;
     SoftmaxLayer sm;
     NegLogLikelihoodLayer nll;

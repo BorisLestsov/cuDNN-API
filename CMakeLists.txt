@@ -13,7 +13,7 @@ include(FindCUDA)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 list(APPEND CUDA_NVCC_FLAGS
-        "-arch=sm_50;
+        "-arch=sm_30;
         -std=c++11;
         -cudart=shared;")
 

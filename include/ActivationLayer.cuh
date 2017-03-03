@@ -14,8 +14,6 @@ public:
 
     cudnnDataType_t inp_datatype;
 
-    // TODO: Replace these with costructor parameters
-
     const int output_tensor_dims = 4;
 
     float* d_output;

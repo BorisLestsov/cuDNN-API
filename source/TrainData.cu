@@ -17,7 +17,6 @@ TrainData::TrainData(
 
     lbl_data = (float*) malloc(batch_size * n_labels * sizeof(float));
 
-    // TODO: check if labels might be float* on GPU!
     checkCudaErrors( cudaMalloc(&d_lbl_data, batch_size * n_labels * sizeof(float)) );
 }
 

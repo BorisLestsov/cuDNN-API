@@ -14,7 +14,7 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
         zero_padding(zp),
         in_C(3),
         out_C(depth_p),
-        _randrange(1.0)
+        _randrange(0.01)
 {
     checkCudnnErrors( cudnnCreateFilterDescriptor(&filter_desc) );
     checkCudnnErrors( cudnnCreateConvolutionDescriptor(&conv_desc) );
@@ -72,6 +72,13 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
                                                  out_N, out_C,
                                                  out_H, out_W) );
 
+    checkCudnnErrors( cudnnCreateTensorDescriptor(&convbias_tensor_desc) );
+    checkCudnnErrors( cudnnSetTensor4dDescriptor(convbias_tensor_desc,
+                                                 CUDNN_TENSOR_NCHW,
+                                                 CUDNN_DATA_FLOAT,
+                                                 1, out_C,
+                                                 1, 1) );
+
 
     checkCudnnErrors( cudnnGetConvolutionForwardAlgorithm(cudnn_handle,
                                                           input_tensor_desc,
@@ -89,16 +96,18 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
                                                               output_tensor_desc,
                                                               algo,
                                                               &workspace_size_bytes) );
-    std::cout << "Workspace size: " << workspace_size_bytes << std::endl;
+    //std::cout << "Workspace size: " << workspace_size_bytes << std::endl;
 
-    checkCudaErrors( cudaMalloc(&_workspace, workspace_size_bytes) );
+    checkCudaErrors( cudaMalloc(&_workspace_forward, workspace_size_bytes) );
 
     weights_length = in_N * kernel_size * kernel_size * out_C;
     output_length = out_N * out_C * out_H * out_W;
 
     h_weights = (float*) malloc(sizeof(float) * weights_length);
+    h_bias = (float*) malloc(sizeof(float) * out_C);
 
     checkCudaErrors( cudaMalloc(&d_weights, sizeof(float) * weights_length) );
+    checkCudaErrors( cudaMalloc(&d_bias, sizeof(float) * out_C) );
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * output_length) );
 
 }
@@ -109,12 +118,16 @@ ConvolutionLayer::~ConvolutionLayer() {
     cudnnDestroyConvolutionDescriptor(conv_desc);
     cudnnDestroyFilterDescriptor(filter_desc);
     cudnnDestroyTensorDescriptor(output_tensor_desc);
+    cudnnDestroyTensorDescriptor(convbias_tensor_desc);
+    //TODO: check tensor desc copy
 
     free(h_weights);
+    free(h_bias);
 
     checkCudaErrors( cudaFree(d_weights) );
+    checkCudaErrors( cudaFree(d_bias) );
     checkCudaErrors( cudaFree(d_output) );
-    checkCudaErrors( cudaFree(_workspace) );
+    checkCudaErrors( cudaFree(_workspace_forward) );
 }
 
 
@@ -123,11 +136,22 @@ void ConvolutionLayer::propagate_forward(float* d_x){
     float beta = 0.0f;
 
 
-    checkCudnnErrors( cudnnConvolutionForward(cudnn_handle, &alpha, input_tensor_desc,
-                                              d_x, filter_desc, d_weights, conv_desc,
-                                              algo, _workspace, workspace_size_bytes, &beta,
+    checkCudnnErrors( cudnnConvolutionForward(cudnn_handle,
+                                              &alpha,
+                                              input_tensor_desc, d_x,
+                                              filter_desc, d_weights,
+                                              conv_desc, algo,
+                                              _workspace_forward, workspace_size_bytes,
+                                              &beta,
                                               output_tensor_desc, d_output) );
 
+    checkCudnnErrors( cudnnAddTensor(cudnn_handle,
+                                     &alpha,
+                                     convbias_tensor_desc, d_bias,
+                                     &alpha,
+                                     output_tensor_desc, d_output) );
+
+    /*
     cudnnTensorDescriptor_t in1;
     checkCudnnErrors( cudnnCreateTensorDescriptor(&in1) );
     checkCudnnErrors( cudnnSetTensor4dDescriptor(in1,
@@ -135,8 +159,8 @@ void ConvolutionLayer::propagate_forward(float* d_x){
                                                  CUDNN_DATA_FLOAT,
                                                  1, in_C, in_H, in_W) );
 
-    /*
-     * This may work for classification of 1 example
+
+    This may work for classification of 1 example
 
     cudnnTensorDescriptor_t out1;
     checkCudnnErrors( cudnnCreateTensorDescriptor(&out1) );
@@ -147,9 +171,21 @@ void ConvolutionLayer::propagate_forward(float* d_x){
 
     checkCudnnErrors( cudnnConvolutionForward(cudnn_handle, &alpha, in1,
                                               d_x, filter_desc, d_weights, conv_desc,
-                                              algo, _workspace, workspace_size_bytes, &beta,
+                                              algo, _workspace_forward, workspace_size_bytes, &beta,
                                               out1, d_output) );
                                               */
+}
+
+void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x) {
+    float alpha = 1.0f;
+    float beta = 0.0f;
+
+
+}
+
+
+void ConvolutionLayer::update_weights(float lr){
+
 }
 
 
@@ -159,6 +195,11 @@ void ConvolutionLayer::init_weights_random(std::mt19937& gen){
     for (uint i = 0; i < weights_length; ++i)
         h_weights[i] = static_cast<float>(get_rand(gen));
 
+    for (uint i = 0; i < out_C; ++i)
+        h_bias[i] = 1.0f;
+
     checkCudaErrors( cudaMemcpy(d_weights, h_weights,
                                 sizeof(float) * weights_length, cudaMemcpyHostToDevice) );
+    checkCudaErrors( cudaMemcpy(d_bias, h_bias,
+                                sizeof(float) * out_C, cudaMemcpyHostToDevice) );
 }
