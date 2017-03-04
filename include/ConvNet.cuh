@@ -3,7 +3,7 @@
 
 #include "helper_functions.cuh"
 #include "TrainData.cuh"
-#include "TestData.h"
+#include "TestData.cuh"
 
 #include "ConvolutionLayer.cuh"
 #include "PoolingLayer.cuh"
@@ -30,10 +30,10 @@ public:
             uint seed = 0);
 
     void fit(TrainData& data, int epoches, float lr);
-    char* predict(TestData& data);
+    int* predict(TestData& data);
 
 
-
+private:
 
 
     ConvolutionLayer conv1;
@@ -42,8 +42,6 @@ public:
     FullyConnectedLayer fc2;
     SoftmaxLayer sm;
     NegLogLikelihoodLayer nll;
-
-private:
 
 
     cudnnHandle_t& cudnn_handle;

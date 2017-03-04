@@ -8,7 +8,7 @@ public:
 
     int n_labels;
 
-    float* lbl_data;
+    float* h_lbl_data;
     float* d_lbl_data;
 
     TrainData(cudnnHandle_t& cudnn_handle_p,

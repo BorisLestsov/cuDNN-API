@@ -14,7 +14,7 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
         conv1(cudnn_handle_p, cublas_handle_p, data_tensor_desc_p, 8, 11, 4, 0),
         fc1(cublas_handle_p, conv1.output_tensor_desc, 150),
         act1(cudnn_handle_p, fc1.output_tensor_desc, CUDNN_ACTIVATION_RELU),
-        fc2(cublas_handle_p, act1.output_tensor_desc, 90),
+        fc2(cublas_handle_p, act1.output_tensor_desc, 91),
         sm(cudnn_handle_p, fc2.output_tensor_desc),
         nll(cudnn_handle_p, sm.output_tensor_desc),
 
@@ -44,6 +44,8 @@ void ConvNet::fit(TrainData& train, int epoches, float lr){
             sm.propagate_forward(fc2.d_output);
             nll.propagate_forward(train.d_lbl_data, sm.d_output);
 
+            std::cout << "    Batch loss:" << nll.batch_loss << std::endl;
+
             nll.propagate_backward(train.d_lbl_data, sm.d_output);
             sm.propagate_backward(nll.d_dx, fc2.d_output);
             fc2.propagate_backward(sm.d_dx, act1.d_output);
@@ -62,6 +64,19 @@ void ConvNet::fit(TrainData& train, int epoches, float lr){
 }
 
 
-char* ConvNet::predict(TestData&){
-    return nullptr;
+int* ConvNet::predict(TestData& test){
+    while (!test.is_finished()) {
+        //std::cout << "Propagating next batch: " << train.get_n_read() << std::endl;
+
+        test.load_next_batch();
+        test.copy_batch_to_GPU();
+
+        conv1.propagate_forward(test.d_img_data);
+        fc1.propagate_forward(conv1.d_output);
+        act1.propagate_forward(fc1.d_output);
+        fc2.propagate_forward(act1.d_output);
+        sm.propagate_forward(fc2.d_output);
+
+        test.predict_batch_classes(sm.d_output);
+    }
 }

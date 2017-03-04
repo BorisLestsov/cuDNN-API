@@ -41,7 +41,7 @@ def main():
     print metadata
     im_f.write(metadata.tobytes())
 
-    metadata_lbls = np.array([n_cats], dtype=np.int32)
+    metadata_lbls = np.array([n_cats+1], dtype=np.int32)
     print metadata_lbls
     lb_f.write(metadata_lbls.tobytes())
 

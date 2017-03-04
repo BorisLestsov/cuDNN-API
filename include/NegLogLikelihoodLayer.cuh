@@ -20,6 +20,8 @@ public:
     int out_N, out_C, out_H, out_W;
     int n_labels;
 
+    float batch_loss;
+
     NegLogLikelihoodLayer(cudnnHandle_t& cudnn_handle_p);
     NegLogLikelihoodLayer(cudnnHandle_t& cudnn_handle_p,
              cudnnTensorDescriptor_t input_tensor_desc_p);

@@ -8,8 +8,9 @@ int main(){
 
         /*
          * TODO: add saving/loading weights
-         * TODO: implement TestData
-         * TODO: add saving convolution filters
+         * TODO: add labels saving in TestData
+         * TODO: add saving convolution filters - done
+         * TODO: make possible train and test batch_sizes to be different
          */
 
         ulong seed = 1; // Should be passed through command line
@@ -21,15 +22,26 @@ int main(){
         cublasHandle_t cublas_handle;
         checkCublasErrors(cublasCreate(&cublas_handle));
 
+        int train_batch_size = 1;
+        int test_batch_size = train_batch_size;
+
         TrainData train(cudnn_handle,
                         "dataset/imgdata.dat",
                         "dataset/nmdata.dat",
                         "dataset/lbldata.dat",
-                        1);
+                        train_batch_size);
+
+        TestData test(cudnn_handle,
+                      "dataset/imgdata.dat",
+                      "dataset/nmdata.dat",
+                      train.n_labels,
+                      test_batch_size);
 
 
         ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc, seed);
-        alexnet.fit(train, 500, 1e-2);
+        alexnet.fit(train, 150, 1e-2);
+        alexnet.predict(test);
+
 
         //alexnet.conv1.save_kernels("kernels.dat");
 

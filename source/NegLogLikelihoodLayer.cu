@@ -44,17 +44,14 @@ void NegLogLikelihoodLayer::propagate_forward(float* d_t, float* d_x){
     compute_nll<<<_ceil(in_N, BW), BW>>>(d_t, d_x, n_labels, in_N, d_output);
 
 
-
     float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
     checkCudaErrors(cudaMemcpy(h_output, d_output,
                                out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
 
-    float batch_loss = 0.0;
+    batch_loss = 0.0;
     for (uint i = 0; i < out_N; ++i) {
         batch_loss += h_output[i];
     }
-
-    std::cout << "    Batch loss:" << batch_loss << std::endl;
 }
 
 
