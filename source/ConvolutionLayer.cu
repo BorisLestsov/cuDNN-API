@@ -1,12 +1,14 @@
 #include "ConvolutionLayer.cuh"
 
 ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
-                cudnnTensorDescriptor_t input_tensor_desc_p,
-                size_t depth_p,
-                size_t ker_size,
-                size_t stride,
-                size_t zp):
+                                   cublasHandle_t& cublas_handle_p,
+                                   cudnnTensorDescriptor_t input_tensor_desc_p,
+                                   size_t depth_p,
+                                   size_t ker_size,
+                                   size_t stride,
+                                   size_t zp):
         cudnn_handle(cudnn_handle_p),
+        cublas_handle(cublas_handle_p),
         input_tensor_desc(input_tensor_desc_p),
         depth(depth_p),
         kernel_size(ker_size),
@@ -125,7 +127,7 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
 
     checkCudaErrors( cudaMalloc(&d_workspace, workspace_size_bytes) );
 
-    weights_length = in_N * kernel_size * kernel_size * out_C;
+    weights_length = in_C * kernel_size * kernel_size * out_C;
     output_length = out_N * out_C * out_H * out_W;
     bias_length = out_C;
 
@@ -179,11 +181,19 @@ void ConvolutionLayer::propagate_forward(float* d_x){
                                               &beta,
                                               output_tensor_desc, d_output) );
 
+//    float *h_x = (float *) malloc(out_N * out_C * out_H * out_W * sizeof(float));
+//    checkCudaErrors(cudaMemcpy(h_x, d_output,
+//                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
+
+
     checkCudnnErrors( cudnnAddTensor(cudnn_handle,
                                      &alpha,
                                      bias_tensor_desc, d_bias,
                                      &alpha,
                                      output_tensor_desc, d_output) );
+
+//    checkCudaErrors(cudaMemcpy(h_x, d_output,
+//                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
 
     /*
     cudnnTensorDescriptor_t in1;
@@ -242,7 +252,19 @@ void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x) {
 
 
 void ConvolutionLayer::update_weights(float lr){
+    float alpha = lr;
 
+    checkCublasErrors( cublasSaxpy(cublas_handle,
+                                   weights_length,
+                                   &alpha,
+                                   d_dweights, 1,
+                                   d_weights, 1));
+
+    checkCublasErrors( cublasSaxpy(cublas_handle,
+                                   bias_length,
+                                   &alpha,
+                                   d_dbias, 1,
+                                   d_bias, 1));
 }
 
 
@@ -252,11 +274,30 @@ void ConvolutionLayer::init_weights_random(std::mt19937& gen){
     for (uint i = 0; i < weights_length; ++i)
         h_weights[i] = static_cast<float>(get_rand(gen));
 
-    for (uint i = 0; i < out_C; ++i)
+    for (uint i = 0; i < bias_length; ++i)
         h_bias[i] = 1.0f;
 
     checkCudaErrors( cudaMemcpy(d_weights, h_weights,
                                 sizeof(float) * weights_length, cudaMemcpyHostToDevice) );
     checkCudaErrors( cudaMemcpy(d_bias, h_bias,
                                 sizeof(float) * bias_length, cudaMemcpyHostToDevice) );
+}
+
+
+void ConvolutionLayer::save_kernels(const char* fname){
+    std::ofstream f(fname, std::ios::binary | std::ios::out | std::ios::trunc);
+    if (!f.good())
+        throw std::runtime_error("Could not open file to write kernels");
+
+    f.write((const char*) &in_C, sizeof(int));
+    f.write((const char*) &out_C, sizeof(int));
+    f.write((const char*) &kernel_size, sizeof(int));
+    f.write((const char*) &kernel_size, sizeof(int));
+
+    float *h_x = (float *) malloc(weights_length * sizeof(float));
+    checkCudaErrors(cudaMemcpy(h_x, d_weights,
+                               weights_length * sizeof(float), cudaMemcpyDeviceToHost));
+    f.write((const char*) h_x, sizeof(float) * weights_length);
+
+    f.close();
 }

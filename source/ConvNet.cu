@@ -11,8 +11,8 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
         data_tensor_desc(data_tensor_desc_p),
 
 
-        conv1(cudnn_handle_p, data_tensor_desc_p, 96, 11, 4, 0),
-        fc1(cublas_handle_p, conv1.output_tensor_desc, 50),
+        conv1(cudnn_handle_p, cublas_handle_p, data_tensor_desc_p, 8, 11, 4, 0),
+        fc1(cublas_handle_p, conv1.output_tensor_desc, 150),
         act1(cudnn_handle_p, fc1.output_tensor_desc, CUDNN_ACTIVATION_RELU),
         fc2(cublas_handle_p, act1.output_tensor_desc, 90),
         sm(cudnn_handle_p, fc2.output_tensor_desc),

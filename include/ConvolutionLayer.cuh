@@ -5,6 +5,7 @@
 #include "cstdlib"
 
 #include <random>
+#include <fstream>
 
 
 class ConvolutionLayer: public Layer {
@@ -40,6 +41,7 @@ public:
 
     ConvolutionLayer(cudnnHandle_t& cudnn_handle_p);
     ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
+                     cublasHandle_t& cublas_handle_p,
                      cudnnTensorDescriptor_t input_tensor_desc_p,
                      size_t depth, size_t ker_size, size_t stride, size_t zp = 0);
 
@@ -48,12 +50,14 @@ public:
 
     void init_weights_random(std::mt19937& gen);
     void load_weights_from_file(const char* fname);
+    void save_kernels(const char* fname);
 
     void propagate_forward(float* d_x);
     void propagate_backward(float* d_dy, float* d_x);
     void update_weights(float lr);
 
 private:
+    cublasHandle_t& cublas_handle;
     cudnnHandle_t& cudnn_handle;
     void* d_workspace;
 

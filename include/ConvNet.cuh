@@ -32,7 +32,9 @@ public:
     void fit(TrainData& data, int epoches, float lr);
     char* predict(TestData& data);
 
-private:
+
+
+
 
     ConvolutionLayer conv1;
     FullyConnectedLayer fc1;
@@ -40,6 +42,8 @@ private:
     FullyConnectedLayer fc2;
     SoftmaxLayer sm;
     NegLogLikelihoodLayer nll;
+
+private:
 
 
     cudnnHandle_t& cudnn_handle;
