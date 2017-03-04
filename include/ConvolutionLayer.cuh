@@ -16,9 +16,11 @@ public:
 
     cudnnTensorDescriptor_t input_tensor_desc;
     cudnnTensorDescriptor_t output_tensor_desc;
-    cudnnTensorDescriptor_t convbias_tensor_desc;
+    cudnnTensorDescriptor_t bias_tensor_desc;
 
-    cudnnConvolutionFwdAlgo_t algo;
+    cudnnConvolutionFwdAlgo_t forward_algo;
+    cudnnConvolutionBwdFilterAlgo_t filter_algo;
+    cudnnConvolutionBwdDataAlgo_t data_algo;
 
     int in_N, in_C, in_H, in_W;
     int depth, kernel_size, filter_stride, zero_padding;
@@ -27,10 +29,14 @@ public:
     size_t workspace_size_bytes;
     size_t weights_length;
     size_t output_length;
+    size_t bias_length;
 
     float* h_weights, *h_bias;
     float* d_weights, *d_bias;
     float* d_output;
+
+    float* d_dbias, *d_dweights;
+    float* d_dx;
 
     ConvolutionLayer(cudnnHandle_t& cudnn_handle_p);
     ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
@@ -49,7 +55,7 @@ public:
 
 private:
     cudnnHandle_t& cudnn_handle;
-    void* _workspace_forward;
+    void* d_workspace;
 
     float _randrange;
 };

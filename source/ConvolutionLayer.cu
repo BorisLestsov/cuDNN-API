@@ -72,8 +72,8 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
                                                  out_N, out_C,
                                                  out_H, out_W) );
 
-    checkCudnnErrors( cudnnCreateTensorDescriptor(&convbias_tensor_desc) );
-    checkCudnnErrors( cudnnSetTensor4dDescriptor(convbias_tensor_desc,
+    checkCudnnErrors( cudnnCreateTensorDescriptor(&bias_tensor_desc) );
+    checkCudnnErrors( cudnnSetTensor4dDescriptor(bias_tensor_desc,
                                                  CUDNN_TENSOR_NCHW,
                                                  CUDNN_DATA_FLOAT,
                                                  1, out_C,
@@ -87,28 +87,60 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
                                                           output_tensor_desc,
                                                           CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
                                                           0,
-                                                          &algo) );
+                                                          &forward_algo) );
 
     checkCudnnErrors( cudnnGetConvolutionForwardWorkspaceSize(cudnn_handle,
                                                               input_tensor_desc,
                                                               filter_desc,
                                                               conv_desc,
                                                               output_tensor_desc,
-                                                              algo,
+                                                              forward_algo,
                                                               &workspace_size_bytes) );
+
+    size_t tmp_size;
+    checkCudnnErrors( cudnnGetConvolutionBackwardFilterAlgorithm(
+            cudnn_handle,
+            input_tensor_desc, output_tensor_desc, conv_desc, filter_desc,
+            CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0, &filter_algo) );
+
+    checkCudnnErrors( cudnnGetConvolutionBackwardFilterWorkspaceSize(
+            cudnn_handle,
+            input_tensor_desc, output_tensor_desc, conv_desc, filter_desc,
+            filter_algo, &tmp_size) );
+    if (tmp_size > workspace_size_bytes)
+        workspace_size_bytes = tmp_size;
+
+    checkCudnnErrors( cudnnGetConvolutionBackwardDataAlgorithm(
+            cudnn_handle, filter_desc, output_tensor_desc, conv_desc, input_tensor_desc,
+            CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0, &data_algo) );
+
+    checkCudnnErrors( cudnnGetConvolutionBackwardDataWorkspaceSize(
+            cudnn_handle, filter_desc, output_tensor_desc, conv_desc, input_tensor_desc,
+            data_algo, &tmp_size) );
+    if (tmp_size > workspace_size_bytes)
+        workspace_size_bytes = tmp_size;
+    // TODO: Use one workspace for all layers
+
     //std::cout << "Workspace size: " << workspace_size_bytes << std::endl;
 
-    checkCudaErrors( cudaMalloc(&_workspace_forward, workspace_size_bytes) );
+    checkCudaErrors( cudaMalloc(&d_workspace, workspace_size_bytes) );
 
     weights_length = in_N * kernel_size * kernel_size * out_C;
     output_length = out_N * out_C * out_H * out_W;
+    bias_length = out_C;
 
     h_weights = (float*) malloc(sizeof(float) * weights_length);
     h_bias = (float*) malloc(sizeof(float) * out_C);
 
     checkCudaErrors( cudaMalloc(&d_weights, sizeof(float) * weights_length) );
-    checkCudaErrors( cudaMalloc(&d_bias, sizeof(float) * out_C) );
+    checkCudaErrors( cudaMalloc(&d_dweights, sizeof(float) * weights_length) );
+
+    checkCudaErrors( cudaMalloc(&d_bias, sizeof(float) * bias_length) );
+    checkCudaErrors( cudaMalloc(&d_dbias, sizeof(float) * bias_length) );
+
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * output_length) );
+
+    checkCudaErrors( cudaMalloc(&d_dx, sizeof(float) * in_N * in_C * in_H * in_W) );
 
 }
 
@@ -118,16 +150,19 @@ ConvolutionLayer::~ConvolutionLayer() {
     cudnnDestroyConvolutionDescriptor(conv_desc);
     cudnnDestroyFilterDescriptor(filter_desc);
     cudnnDestroyTensorDescriptor(output_tensor_desc);
-    cudnnDestroyTensorDescriptor(convbias_tensor_desc);
+    cudnnDestroyTensorDescriptor(bias_tensor_desc);
     //TODO: check tensor desc copy
 
     free(h_weights);
     free(h_bias);
 
+    checkCudaErrors( cudaFree(d_workspace) );
     checkCudaErrors( cudaFree(d_weights) );
+    checkCudaErrors( cudaFree(d_dweights) );
     checkCudaErrors( cudaFree(d_bias) );
+    checkCudaErrors( cudaFree(d_dbias) );
     checkCudaErrors( cudaFree(d_output) );
-    checkCudaErrors( cudaFree(_workspace_forward) );
+    checkCudaErrors( cudaFree(d_dx) );
 }
 
 
@@ -135,19 +170,18 @@ void ConvolutionLayer::propagate_forward(float* d_x){
     float alpha = 1.0f;
     float beta = 0.0f;
 
-
     checkCudnnErrors( cudnnConvolutionForward(cudnn_handle,
                                               &alpha,
                                               input_tensor_desc, d_x,
                                               filter_desc, d_weights,
-                                              conv_desc, algo,
-                                              _workspace_forward, workspace_size_bytes,
+                                              conv_desc, forward_algo,
+                                              d_workspace, workspace_size_bytes,
                                               &beta,
                                               output_tensor_desc, d_output) );
 
     checkCudnnErrors( cudnnAddTensor(cudnn_handle,
                                      &alpha,
-                                     convbias_tensor_desc, d_bias,
+                                     bias_tensor_desc, d_bias,
                                      &alpha,
                                      output_tensor_desc, d_output) );
 
@@ -171,7 +205,7 @@ void ConvolutionLayer::propagate_forward(float* d_x){
 
     checkCudnnErrors( cudnnConvolutionForward(cudnn_handle, &alpha, in1,
                                               d_x, filter_desc, d_weights, conv_desc,
-                                              algo, _workspace_forward, workspace_size_bytes, &beta,
+                                              algo, d_workspace, workspace_size_bytes, &beta,
                                               out1, d_output) );
                                               */
 }
@@ -180,6 +214,29 @@ void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
+    checkCudnnErrors( cudnnConvolutionBackwardBias(cudnn_handle,
+                                                   &alpha,
+                                                   output_tensor_desc, d_dy,
+                                                   &beta,
+                                                   bias_tensor_desc, d_dbias) );
+
+
+    checkCudnnErrors( cudnnConvolutionBackwardFilter(cudnn_handle,
+                                                     &alpha,
+                                                     input_tensor_desc, d_x,
+                                                     output_tensor_desc, d_dy,
+                                                     conv_desc,
+                                                     filter_algo, d_workspace, workspace_size_bytes,
+                                                     &beta,
+                                                     filter_desc, d_dweights) );
+
+    checkCudnnErrors( cudnnConvolutionBackwardData(cudnn_handle,
+                                                   &alpha,
+                                                   filter_desc,
+                                                   d_weights, output_tensor_desc, d_dy, conv_desc,
+                                                   data_algo, d_workspace, workspace_size_bytes,
+                                                   &beta,
+                                                   input_tensor_desc, d_dx) );
 
 }
 
@@ -201,5 +258,5 @@ void ConvolutionLayer::init_weights_random(std::mt19937& gen){
     checkCudaErrors( cudaMemcpy(d_weights, h_weights,
                                 sizeof(float) * weights_length, cudaMemcpyHostToDevice) );
     checkCudaErrors( cudaMemcpy(d_bias, h_bias,
-                                sizeof(float) * out_C, cudaMemcpyHostToDevice) );
+                                sizeof(float) * bias_length, cudaMemcpyHostToDevice) );
 }

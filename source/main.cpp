@@ -6,6 +6,12 @@
 int main(){
     try {
 
+        /*
+         * TODO: add saving/loading weights
+         * TODO: implement TestData
+         * TODO: add saving convolution filters
+         */
+
         ulong seed = 1; // Should be passed through command line
 
         InitializeCUDA();

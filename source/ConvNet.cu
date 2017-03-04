@@ -12,8 +12,7 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
 
 
         conv1(cudnn_handle_p, data_tensor_desc_p, 96, 11, 4, 0),
-
-        fc1(cublas_handle_p, data_tensor_desc_p, 50),
+        fc1(cublas_handle_p, conv1.output_tensor_desc, 50),
         act1(cudnn_handle_p, fc1.output_tensor_desc, CUDNN_ACTIVATION_RELU),
         fc2(cublas_handle_p, act1.output_tensor_desc, 90),
         sm(cudnn_handle_p, fc2.output_tensor_desc),
@@ -39,8 +38,7 @@ void ConvNet::fit(TrainData& train, int epoches, float lr){
 
 
             conv1.propagate_forward(train.d_img_data);
-
-            fc1.propagate_forward(train.d_img_data);
+            fc1.propagate_forward(conv1.d_output);
             act1.propagate_forward(fc1.d_output);
             fc2.propagate_forward(act1.d_output);
             sm.propagate_forward(fc2.d_output);
@@ -50,8 +48,10 @@ void ConvNet::fit(TrainData& train, int epoches, float lr){
             sm.propagate_backward(nll.d_dx, fc2.d_output);
             fc2.propagate_backward(sm.d_dx, act1.d_output);
             act1.propagate_backward(fc2.d_dx, fc1.d_output);
-            fc1.propagate_backward(fc2.d_dx, train.d_img_data);
+            fc1.propagate_backward(act1.d_dx, conv1.d_output);
+            conv1.propagate_backward(fc1.d_dx, train.d_img_data);
 
+            conv1.update_weights(lr);
             fc1.update_weights(lr);
             fc2.update_weights(lr);
 
