@@ -49,29 +49,11 @@ void SoftmaxLayer::propagate_forward(float* d_x){
                                           &beta,
                                           output_tensor_desc, d_output) );
 
-//    float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
-//    checkCudaErrors(cudaMemcpy(h_output, d_output,
-//                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
-//    std::cout << "Softmax:" << std::endl;
-//
-//    for (uint i = 0; i < out_N; ++i) {
-//        std::cout << "    EXAMPLE" << std::endl;
-//        for (uint j = 0; j < out_W; ++j) {
-//            std::cout << h_output[i*out_W + j] << "    ";
-//        }
-//        std::cout << std::endl;
-//    }
 }
 
 
 void SoftmaxLayer::propagate_backward(float* d_dy, float* d_x){
     float alpha = 1.0f, beta = 0.0f;
-
-    /*float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
-    checkCudaErrors(cudaMemcpy(h_x, d_x,
-                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-*/
-
 
     checkCudnnErrors( cudnnSoftmaxBackward(cudnn_handle,
                                            CUDNN_SOFTMAX_ACCURATE,

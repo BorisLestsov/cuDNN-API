@@ -28,11 +28,14 @@ MSELayer::MSELayer(cudnnHandle_t& cudnn_handle_p,
 
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * out_N * out_C * out_H * out_W) );
     checkCudaErrors( cudaMalloc(&d_dx, sizeof(float) * in_N * in_C * in_H * in_W) );
+    float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
 
 }
 
 MSELayer::~MSELayer() {
     cudnnDestroyTensorDescriptor(output_tensor_desc);
+
+    free(h_output);
 
     checkCudaErrors( cudaFree(d_output) );
     checkCudaErrors( cudaFree(d_dx) );
@@ -43,18 +46,13 @@ void MSELayer::propagate_forward(float* d_t, float* d_x){
 
     compute_mse<<<_ceil(in_N, BW), BW>>>(d_t, d_x, n_labels, in_N, d_output);
 
-
-
-    float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
     checkCudaErrors(cudaMemcpy(h_output, d_output,
                                out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
 
-    float batch_loss = 0.0;
+    batch_loss = 0.0;
     for (uint i = 0; i < out_N; ++i) {
         batch_loss += h_output[i];
     }
-
-    std::cout << "    Batch loss:" << batch_loss << std::endl;
 }
 
 
@@ -63,19 +61,6 @@ void MSELayer::propagate_backward(float* d_t, float* d_y){
     compute_mse_loss<<<_ceil(out_N, BW), BW>>>(d_t, d_y, n_labels, in_N, d_dx);
 
 
-
-//    float *h_output = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
-//    checkCudaErrors(cudaMemcpy(h_output, d_dx,
-//                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-//    std::cout << "MSE:" << std::endl;
-//
-//    for (uint i = 0; i < in_N; ++i) {
-//        std::cout << "    Batch gradient:" << std::endl;
-//        for (uint j = 0; j < in_C*in_H*in_W; ++j) {
-//            std::cout << h_output[i*n_labels + j] << "    ";
-//        }
-//        std::cout << std::endl;
-//    }
 }
 
 

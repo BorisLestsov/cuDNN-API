@@ -13,7 +13,7 @@ public:
 
     const int output_tensor_dims = 4;
 
-    float* d_output;
+    float* d_output, *h_output;
     float* d_dx;
 
     int in_N, in_C, in_H, in_W;

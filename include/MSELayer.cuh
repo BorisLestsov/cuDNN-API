@@ -14,8 +14,10 @@ public:
 
     const int output_tensor_dims = 4;
 
-    float* d_output;
+    float* d_output, *h_output;
     float* d_dx;
+
+    float batch_loss;
 
     int in_N, in_C, in_H, in_W;
     int out_N, out_C, out_H, out_W;
