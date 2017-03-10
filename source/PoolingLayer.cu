@@ -34,6 +34,7 @@ PoolingLayer::PoolingLayer(cudnnHandle_t& cudnn_handle_p,
                                                  out_H, out_W) );
 
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * out_N * out_C * out_H * out_W) );
+    checkCudaErrors( cudaMalloc(&d_dx, sizeof(float) * in_N * in_C * in_H * in_W) );
 
 }
 
@@ -42,6 +43,7 @@ PoolingLayer::~PoolingLayer() {
     cudnnDestroyTensorDescriptor(output_tensor_desc);
 
     checkCudaErrors( cudaFree(d_output) );
+    checkCudaErrors( cudaFree(d_dx) );
 }
 
 
@@ -56,3 +58,16 @@ void PoolingLayer::propagate_forward(float* d_x){
                                           output_tensor_desc, d_output) );
 }
 
+
+void PoolingLayer::propagate_backward(float* d_dy, float* d_x){
+    float alpha = 1.0f, beta = 0.0f;
+
+    checkCudnnErrors(cudnnPoolingBackward(cudnn_handle,
+                                          pooling_desc,
+                                          &alpha,
+                                          output_tensor_desc, d_output,
+                                          output_tensor_desc, d_dy,
+                                          input_tensor_desc, d_x,
+                                          &beta,
+                                          input_tensor_desc, d_dx));
+}
