@@ -181,10 +181,6 @@ void ConvolutionLayer::propagate_forward(float* d_x){
                                               &beta,
                                               output_tensor_desc, d_output) );
 
-//    float *h_x = (float *) malloc(out_N * out_C * out_H * out_W * sizeof(float));
-//    checkCudaErrors(cudaMemcpy(h_x, d_output,
-//                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
-
 
     checkCudnnErrors( cudnnAddTensor(cudnn_handle,
                                      &alpha,
@@ -192,32 +188,14 @@ void ConvolutionLayer::propagate_forward(float* d_x){
                                      &alpha,
                                      output_tensor_desc, d_output) );
 
-//    checkCudaErrors(cudaMemcpy(h_x, d_output,
-//                               out_N * out_C * out_H * out_W * sizeof(float), cudaMemcpyDeviceToHost));
+//    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
+//    checkCudaErrors(cudaMemcpy(h_x, d_x,
+//                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
+//
+//    for (ulong i = 0; i < in_N * in_C * in_H * in_W; ++i){
+//        std::cout << h_x[i] << "  ";
+//    }
 
-    /*
-    cudnnTensorDescriptor_t in1;
-    checkCudnnErrors( cudnnCreateTensorDescriptor(&in1) );
-    checkCudnnErrors( cudnnSetTensor4dDescriptor(in1,
-                                                 CUDNN_TENSOR_NCHW,
-                                                 CUDNN_DATA_FLOAT,
-                                                 1, in_C, in_H, in_W) );
-
-
-    This may work for classification of 1 example
-
-    cudnnTensorDescriptor_t out1;
-    checkCudnnErrors( cudnnCreateTensorDescriptor(&out1) );
-    checkCudnnErrors( cudnnSetTensor4dDescriptor(out1,
-                                                 CUDNN_TENSOR_NCHW,
-                                                 CUDNN_DATA_FLOAT,
-                                                 1, 96, 55, 55) );
-
-    checkCudnnErrors( cudnnConvolutionForward(cudnn_handle, &alpha, in1,
-                                              d_x, filter_desc, d_weights, conv_desc,
-                                              algo, d_workspace, workspace_size_bytes, &beta,
-                                              out1, d_output) );
-                                              */
 }
 
 void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x) {

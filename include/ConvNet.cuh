@@ -33,16 +33,31 @@ public:
     int* predict(TestData& data);
 
 
-private:
-
-
     ConvolutionLayer conv1;
-    FullyConnectedLayer fc1;
-    ActivationLayer act1;
-    FullyConnectedLayer fc2;
+    ActivationLayer relu1;
+    PoolingLayer pool1;
+    ConvolutionLayer conv2;
+    ActivationLayer relu2;
+    PoolingLayer pool2;
+    ConvolutionLayer conv3;
+    ActivationLayer relu3;
+    ConvolutionLayer conv4;
+    ActivationLayer relu4;
+    ConvolutionLayer conv5;
+    ActivationLayer relu5;
+    PoolingLayer pool5;
+
+    FullyConnectedLayer fc6;
+    ActivationLayer relu6;
+    //drop 6
+    FullyConnectedLayer fc7;
+    ActivationLayer relu7;
+    //drop 7
+    FullyConnectedLayer fc8;
     SoftmaxLayer sm;
     NegLogLikelihoodLayer nll;
 
+private:
 
     cudnnHandle_t& cudnn_handle;
     cublasHandle_t& cublas_handle;

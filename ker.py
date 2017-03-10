@@ -15,6 +15,8 @@ kers = kers.swapaxes(1, 2)
 kers = kers.swapaxes(2, 3)
 print kers.shape
 
-im0 = kers[0, :, :, :]
-plt.imshow(im0, interpolation='none')
+for i in range(8):
+	im0 = kers[i, :, :, :]
+	plt.imshow(im0)
+	
 plt.show()

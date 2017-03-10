@@ -13,7 +13,7 @@ int main(){
          * TODO: make possible train and test batch_sizes to be different
          */
 
-        ulong seed = 1; // Should be passed through command line
+        ulong seed = 2; // Should be passed through command line
 
         InitializeCUDA();
 
@@ -39,11 +39,8 @@ int main(){
 
 
         ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc, seed);
-        alexnet.fit(train, 150, 1e-2);
+        alexnet.fit(train, 200, 5e-2);
         alexnet.predict(test);
-
-
-        //alexnet.conv1.save_kernels("kernels.dat");
 
 
         checkCudnnErrors(cudnnDestroy(cudnn_handle));
