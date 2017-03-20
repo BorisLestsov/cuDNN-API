@@ -12,21 +12,21 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
 
         conv1(cudnn_handle_p, cublas_handle_p, data_tensor_desc_p, 96, 11, 4, 0),
         relu1(cudnn_handle_p, conv1.output_tensor_desc, CUDNN_ACTIVATION_RELU),
-        pool1(cudnn_handle_p, relu1.output_tensor_desc, 3, 2),
+        pool1(cudnn_handle_p, relu1.output_tensor_desc, 3, 2, 0),
 
-        conv2(cudnn_handle_p, cublas_handle_p, pool1.output_tensor_desc, 256, 5, 1, 0),
+        conv2(cudnn_handle_p, cublas_handle_p, pool1.output_tensor_desc, 256, 5, 1, 1),
         relu2(cudnn_handle_p, conv2.output_tensor_desc, CUDNN_ACTIVATION_RELU),
-        pool2(cudnn_handle_p, relu2.output_tensor_desc, 3, 2),
+        pool2(cudnn_handle_p, relu2.output_tensor_desc, 3, 2, 1),
 
-        conv3(cudnn_handle_p, cublas_handle_p, pool2.output_tensor_desc, 384, 3, 1, 0),
+        conv3(cudnn_handle_p, cublas_handle_p, pool2.output_tensor_desc, 384, 3, 1, 1),
         relu3(cudnn_handle_p, conv3.output_tensor_desc, CUDNN_ACTIVATION_RELU),
 
-        conv4(cudnn_handle_p, cublas_handle_p, relu3.output_tensor_desc, 384, 3, 1, 0),
+        conv4(cudnn_handle_p, cublas_handle_p, relu3.output_tensor_desc, 384, 3, 1, 1),
         relu4(cudnn_handle_p, conv4.output_tensor_desc, CUDNN_ACTIVATION_RELU),
 
-        conv5(cudnn_handle_p, cublas_handle_p, relu4.output_tensor_desc, 256, 3, 1, 0),
+        conv5(cudnn_handle_p, cublas_handle_p, relu4.output_tensor_desc, 256, 3, 1, 1),
         relu5(cudnn_handle_p, conv5.output_tensor_desc, CUDNN_ACTIVATION_RELU),
-        pool5(cudnn_handle_p, relu5.output_tensor_desc, 3, 2),
+        pool5(cudnn_handle_p, relu5.output_tensor_desc, 3, 2, 1),
 
         fc6(cublas_handle_p, pool5.output_tensor_desc, 1024),
         relu6(cudnn_handle_p, fc6.output_tensor_desc, CUDNN_ACTIVATION_RELU),
@@ -56,6 +56,9 @@ ConvNet::ConvNet(cudnnHandle_t& cudnn_handle_p,
 void ConvNet::fit(TrainData& train, int epoches, float lr){
 
     float epoch_loss;
+
+    std::cout << train.n_labels << "    " << nll.n_labels << std::endl;
+
 
     for (uint ep = 0; ep < epoches; ++ep) {
         epoch_loss = 0.0f;
@@ -94,7 +97,7 @@ void ConvNet::fit(TrainData& train, int epoches, float lr){
 
 
             epoch_loss += nll.batch_loss;
-
+            //std::cout << "Batch Loss: " << nll.batch_loss << std::endl;
 
             nll.propagate_backward(train.d_lbl_data, sm.d_output);
             sm.propagate_backward(nll.d_dx, fc8.d_output);
@@ -134,6 +137,7 @@ void ConvNet::fit(TrainData& train, int epoches, float lr){
             fc8.update_weights(lr);
 
         }
+
         std::cout << "Epoch: " << ep
                   << "    Loss:" << epoch_loss
                   << std::endl;

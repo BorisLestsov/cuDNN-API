@@ -11,6 +11,27 @@
 #include <cstdlib>
 #include <stdexcept>
 
+#include <thrust/device_vector.h>
+#include <thrust/reduce.h>
+#include <thrust/transform_reduce.h>
+#include <thrust/execution_policy.h>
+
+#define DSIZEW 10000
+#define DSIZEH 2000
+
+template <typename T>
+struct isnan_test { 
+    __host__ __device__ bool operator()(const T a) const {
+        return isnan(a);
+    }
+};
+
+
+template<typename T>
+inline bool cudaCheckNan(const T* d_ptr, size_t size){
+    return thrust::transform_reduce(thrust::device, d_ptr, d_ptr + size, isnan_test<T>(), 0, thrust::plus<bool>());
+}
+
 
 inline void _checkCudnnErrors(const cudnnStatus_t& status, const char* file, int line) {
     if (status != CUDNN_STATUS_SUCCESS) {
@@ -91,7 +112,7 @@ inline void _checkCublasErrors(const cublasStatus_t& status, const char* file, i
 #define checkCublasErrors(status) _checkCublasErrors(status, __FILE__, __LINE__);
 
 
-inline void InitializeCUDA(){
+inline void InitializeCUDA(int dev){
     int nDevices;
 
     cudaGetDeviceCount(&nDevices);
@@ -120,8 +141,8 @@ inline void InitializeCUDA(){
         printf("  Total Global Memory (MB): %lu\n\n",
                prop.totalGlobalMem/1024/1024);
     }
-    printf("Using GPU number 0\n");
-    checkCudaErrors(cudaSetDevice(0));
+    printf("Using GPU number %d\n", dev);
+    checkCudaErrors(cudaSetDevice(dev));
     printf("------------------\n\n");
 }
 

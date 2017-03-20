@@ -28,8 +28,8 @@ NegLogLikelihoodLayer::NegLogLikelihoodLayer(cudnnHandle_t& cudnn_handle_p,
 
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * out_N * out_C * out_H * out_W) );
     checkCudaErrors( cudaMalloc(&d_dx, sizeof(float) * in_N * in_C * in_H * in_W) );
-    h_output = (float *) malloc(out_N * out_W * sizeof(float));
 
+    h_output = (float*) malloc(sizeof(float) * out_N * out_C * out_H * out_W);
 }
 
 NegLogLikelihoodLayer::~NegLogLikelihoodLayer() {
@@ -43,6 +43,9 @@ NegLogLikelihoodLayer::~NegLogLikelihoodLayer() {
 
 
 void NegLogLikelihoodLayer::propagate_forward(float* d_t, float* d_x){
+#ifdef DEBUG
+    std::cout << "nll in: " << cudaCheckNan(d_x, in_N*in_C*in_H*in_W) << std::endl;    
+#endif
 
     compute_nll<<<_ceil(in_N, BW), BW>>>(d_t, d_x, n_labels, in_N, d_output);
 
@@ -53,13 +56,23 @@ void NegLogLikelihoodLayer::propagate_forward(float* d_t, float* d_x){
     for (uint i = 0; i < out_N; ++i) {
         batch_loss += h_output[i];
     }
+
+#ifdef DEBUG 
+    std::cout << "nll out: " << cudaCheckNan(d_output, out_N*out_C*out_H*out_W) << std::endl;
+#endif
 }
 
 
 void NegLogLikelihoodLayer::propagate_backward(float* d_t, float* d_y){
+#ifdef DEBUG
+    std::cout << "back nll in: " << cudaCheckNan(d_y, out_N*out_C*out_H*out_W) << std::endl;
+#endif
 
     compute_nll_loss<<<_ceil(out_N, BW), BW>>>(d_t, d_y, n_labels, in_N, d_dx);
 
+#ifdef DEBUG    
+    std::cout << "back nll out: " << cudaCheckNan(d_dx, in_N*in_C*in_H*in_W) << std::endl;
+#endif
 }
 
 

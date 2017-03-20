@@ -65,7 +65,7 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 
 
 void FullyConnectedLayer::init_weights_random(std::mt19937& gen){
-
+    std::sqrt(6.0 / (in_C*in_H*in_W + out_C*out_H*out_W));
     std::uniform_real_distribution<> get_rand(-_randrange, _randrange);
 
     size_t weights_length = n_inp * n_outp;
@@ -88,13 +88,9 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
-//    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
-//    checkCudaErrors(cudaMemcpy(h_x, d_x,
-//                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-//
-//    for (ulong i = 0; i < in_N * in_C * in_H * in_W; ++i){
-//        std::cout << h_x[i] << "  ";
-//    }
+#ifdef DEBUG
+    std::cout << "fc in: " << cudaCheckNan(d_x, in_N*in_C*in_H*in_W) << std::endl;    
+#endif
 
     checkCublasErrors(cublasSgemm(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_N,
                                   n_outp, in_N, n_inp,
@@ -113,8 +109,9 @@ void FullyConnectedLayer::propagate_forward(float* d_x) {
                                   &alpha,
                                   d_output, n_outp));
 
-
-
+#ifdef DEBUG
+    std::cout << "fc out: " << cudaCheckNan(d_output, out_N*out_C*out_H*out_W) << std::endl;
+#endif
 }
 
 
@@ -122,10 +119,9 @@ void FullyConnectedLayer::propagate_backward(float* d_dy, float* d_x) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
-    /*float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
-    checkCudaErrors(cudaMemcpy(h_x, d_x,
-                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-*/
+#ifdef DEBUG
+    std::cout << "back fc in: " << cudaCheckNan(d_dy, out_N*out_C*out_H*out_W) << std::endl;
+#endif
 
     checkCublasErrors(cublasSgemm(cublas_handle,
                                   CUBLAS_OP_N, CUBLAS_OP_T,
@@ -144,7 +140,7 @@ void FullyConnectedLayer::propagate_backward(float* d_dy, float* d_x) {
                                   d_ones, 1,
                                   &beta,
                                   d_grad_b, 1));
-
+	
     checkCublasErrors(cublasSgemm(cublas_handle,
                                   CUBLAS_OP_N, CUBLAS_OP_N,
                                   n_inp, in_N, n_outp,
@@ -154,7 +150,9 @@ void FullyConnectedLayer::propagate_backward(float* d_dy, float* d_x) {
                                   &beta,
                                   d_dx, n_inp));
 
-
+#ifdef DEBUG
+    std::cout << "back fc out: " << cudaCheckNan(d_dx, in_N*in_C*in_H*in_W) << std::endl;
+#endif
 }
 
 void FullyConnectedLayer::update_weights(float lr){

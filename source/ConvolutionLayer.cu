@@ -14,8 +14,7 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
         kernel_size(ker_size),
         filter_stride(stride),
         zero_padding(zp),
-        in_C(3),
-        out_C(depth_p),
+	out_C(depth_p),
         _randrange(0.01)
 {
     checkCudnnErrors( cudnnCreateFilterDescriptor(&filter_desc) );
@@ -28,8 +27,8 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
                                                  &in_N, &in_C, &in_H, &in_W,
                                                  &inp_strid, &inp_strid, &inp_strid, &inp_strid) );
 
-    const size_t conv_dims = 2;
-    const int pad[conv_dims] = {0, 0};
+    std::cout << "conv in:  " << in_N << " " << in_C << " " << in_H << " " << in_W << std::endl;   const size_t conv_dims = 2;
+    const int pad[conv_dims] = {zero_padding, zero_padding};
     const int strides[conv_dims] = {filter_stride, filter_stride};
     const int upscale[conv_dims] = {1, 1};
 
@@ -61,11 +60,11 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
     out_H = output_tensor_dims[2];
     out_W = output_tensor_dims[3];
 
-    std::cout << "Conv output forward dims:" << std::endl;
-    for (uint i = 0; i < tensor_dims; ++i){
-        std::cout << output_tensor_dims[i] << "  ";
-    }
-    std::cout << std::endl;
+    //std::cout << "Conv output forward dims:" << std::endl;
+    //for (uint i = 0; i < tensor_dims; ++i){
+    //    std::cout << output_tensor_dims[i] << "  ";
+    //}
+    //std::cout << std::endl;
 
     checkCudnnErrors( cudnnCreateTensorDescriptor(&output_tensor_desc) );
     checkCudnnErrors( cudnnSetTensor4dDescriptor(output_tensor_desc,
@@ -123,7 +122,7 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
         workspace_size_bytes = tmp_size;
     // TODO: Use one workspace for all layers
 
-    //std::cout << "Workspace size: " << workspace_size_bytes << std::endl;
+    std::cout << "Workspace size: " << workspace_size_bytes << std::endl;
 
     checkCudaErrors( cudaMalloc(&d_workspace, workspace_size_bytes) );
 
@@ -131,6 +130,10 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
     output_length = out_N * out_C * out_H * out_W;
     bias_length = out_C;
 
+    size_t free, total;
+    checkCudaErrors( cudaMemGetInfo(&free, &total) );
+    //std::cout << "conv: Free:  " << free << " Total: " << total << std::endl;
+    
     h_weights = (float*) malloc(sizeof(float) * weights_length);
     h_bias = (float*) malloc(sizeof(float) * out_C);
 
@@ -143,7 +146,8 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * output_length) );
 
     checkCudaErrors( cudaMalloc(&d_dx, sizeof(float) * in_N * in_C * in_H * in_W) );
-
+    
+    std::cout << "conv out: " << out_N << " " << out_C << " " << out_H << " " << out_W << std::endl;
 }
 
 
@@ -172,6 +176,10 @@ void ConvolutionLayer::propagate_forward(float* d_x){
     float alpha = 1.0f;
     float beta = 0.0f;
 
+#ifdef DEBUG
+    std::cout << "conv in: " << cudaCheckNan(d_x, in_N*in_C*in_H*in_W) << std::endl;
+#endif
+
     checkCudnnErrors( cudnnConvolutionForward(cudnn_handle,
                                               &alpha,
                                               input_tensor_desc, d_x,
@@ -188,19 +196,19 @@ void ConvolutionLayer::propagate_forward(float* d_x){
                                      &alpha,
                                      output_tensor_desc, d_output) );
 
-//    float *h_x = (float *) malloc(in_N * in_C * in_H * in_W * sizeof(float));
-//    checkCudaErrors(cudaMemcpy(h_x, d_x,
-//                               in_N * in_C * in_H * in_W * sizeof(float), cudaMemcpyDeviceToHost));
-//
-//    for (ulong i = 0; i < in_N * in_C * in_H * in_W; ++i){
-//        std::cout << h_x[i] << "  ";
-//    }
+#ifdef DEBUG
+    std::cout << "conv out: " << cudaCheckNan(d_output, out_N*out_C*out_H*out_W) << std::endl;    
+#endif
 
 }
 
 void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x) {
-    float alpha = 1.0f;
+    float alpha = 1.0;
     float beta = 0.0f;
+
+#ifdef DEBUG
+    std::cout << "back conv in: " << cudaCheckNan(d_dy, out_N*out_C*out_H*out_W) << std::endl;
+#endif
 
     checkCudnnErrors( cudnnConvolutionBackwardBias(cudnn_handle,
                                                    &alpha,
@@ -220,12 +228,17 @@ void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x) {
 
     checkCudnnErrors( cudnnConvolutionBackwardData(cudnn_handle,
                                                    &alpha,
-                                                   filter_desc,
-                                                   d_weights, output_tensor_desc, d_dy, conv_desc,
-                                                   data_algo, d_workspace, workspace_size_bytes,
+                                                   filter_desc, d_weights, 
+                                                   output_tensor_desc, d_dy, 
+                                                   conv_desc,
+                                                   data_algo, 
+                                                   d_workspace, workspace_size_bytes,
                                                    &beta,
                                                    input_tensor_desc, d_dx) );
 
+#ifdef DEBUG
+    std::cout << "back conv in: " << cudaCheckNan(d_dx, in_N*in_C*in_H*in_W) << std::endl;
+#endif
 }
 
 
@@ -247,6 +260,7 @@ void ConvolutionLayer::update_weights(float lr){
 
 
 void ConvolutionLayer::init_weights_random(std::mt19937& gen){
+    _randrange = std::sqrt(6.0 / (in_C*in_H*in_W + out_C*out_H*out_W));
     std::uniform_real_distribution<> get_rand(-_randrange, _randrange);
 
     for (uint i = 0; i < weights_length; ++i)

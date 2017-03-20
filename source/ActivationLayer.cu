@@ -48,6 +48,10 @@ ActivationLayer::~ActivationLayer() {
 void ActivationLayer::propagate_forward(float* d_x){
     float alpha = 1.0f, beta = 0.0f;
 
+#ifdef DEBUG
+    std::cout << "act in: " << cudaCheckNan(d_x, in_N*in_C*in_H*in_W) << std::endl;
+#endif
+
     checkCudnnErrors( cudnnActivationForward(cudnn_handle,
                                              act_desc,
                                              &alpha,
@@ -56,11 +60,18 @@ void ActivationLayer::propagate_forward(float* d_x){
                                              &beta,
                                              output_tensor_desc,
                                              d_output) );
-
+    
+#ifdef DEBUG
+    std::cout << "pool out: " << cudaCheckNan(d_output, out_N*out_C*out_H*out_W) << std::endl;
+#endif
 }
 
 void ActivationLayer::propagate_backward(float* d_dy, float* d_x){
     float alpha = 1.0f, beta = 0.0f;
+    
+#ifdef DEBUG
+    std::cout << "back act in: " << cudaCheckNan(d_dy, out_N*out_C*out_H*out_W) << std::endl;
+#endif
 
     checkCudnnErrors(cudnnActivationBackward(cudnn_handle,
                                              act_desc,
@@ -70,4 +81,9 @@ void ActivationLayer::propagate_backward(float* d_dy, float* d_x){
                                              input_tensor_desc, d_x,
                                              &beta,
                                              input_tensor_desc, d_dx));
+
+#ifdef DEBUG
+    std::cout << "back act out: " << cudaCheckNan(d_dx, in_N*in_C*in_H*in_W) << std::endl;
+#endif
 }
+

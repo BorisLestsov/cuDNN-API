@@ -22,13 +22,13 @@ public:
     float* d_dx;
 
     int in_N, in_C, in_H, in_W;
-    int size, stride;
+    int size, stride, pad;
     int out_N, out_C, out_H, out_W;  // FORWARD!!!
 
     PoolingLayer(cudnnHandle_t& cudnn_handle_p);
     PoolingLayer(cudnnHandle_t& cudnn_handle_p,
                 cudnnTensorDescriptor_t input_tensor_desc_p,
-                        size_t size_p, size_t stride_p);
+                        size_t size_p, size_t stride_p, size_t pad_p);
 
     ~PoolingLayer();
 
