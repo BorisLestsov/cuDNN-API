@@ -18,16 +18,16 @@ list(APPEND CUDA_NVCC_FLAGS
         -cudart=shared;")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -O0 -g")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -O0 -g -DDEBUG")
     list(APPEND CUDA_NVCC_FLAGS
-            "-g;
-            -O0;")
+            "-g
+            -O0")
+
 else()
     set(CMAKE_BUILD_TYPE "Release")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall -Werror")
     list(APPEND CUDA_NVCC_FLAGS
-            "
-            -O3;")
+            "-O3;")
 endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 

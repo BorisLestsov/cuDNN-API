@@ -9,35 +9,23 @@ class PoolingLayer: public Layer {
 public:
     cudnnPoolingDescriptor_t pooling_desc;
 
-    cudnnTensorDescriptor_t input_tensor_desc;
-    cudnnTensorDescriptor_t output_tensor_desc;
-
     cudnnPoolingMode_t algo;
-
-    cudnnDataType_t inp_datatype;
 
     const int output_tensor_dims = 4;
 
-    float* d_output;
-    float* d_dx;
-
-    int in_N, in_C, in_H, in_W;
     int size, stride, pad;
-    int out_N, out_C, out_H, out_W;  // FORWARD!!!
 
-    PoolingLayer(cudnnHandle_t& cudnn_handle_p);
     PoolingLayer(cudnnHandle_t& cudnn_handle_p,
                 cudnnTensorDescriptor_t input_tensor_desc_p,
                         size_t size_p, size_t stride_p, size_t pad_p);
 
     ~PoolingLayer();
 
-    void propagate_forward(float* d_x);
-    void propagate_backward(float* d_dy, float* d_x);
+    void propagate_forward(float* d_x) override;
+    void propagate_backward(float* d_dy, float* d_x, float momentum = 0.0) override;
+    void update_weights(float lr) override {};
 
 private:
-    cudnnHandle_t& cudnn_handle;
-
 
 };
 

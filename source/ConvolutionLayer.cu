@@ -6,26 +6,18 @@ ConvolutionLayer::ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
                                    size_t depth_p,
                                    size_t ker_size,
                                    size_t stride,
-                                   size_t zp):
-        cudnn_handle(cudnn_handle_p),
-        cublas_handle(cublas_handle_p),
-        input_tensor_desc(input_tensor_desc_p),
+                                   size_t zp) :
+        Layer(Layer_t::Convolution, input_tensor_desc_p, cudnn_handle_p, cublas_handle_p),
         depth(depth_p),
         kernel_size(ker_size),
         filter_stride(stride),
         zero_padding(zp),
-	out_C(depth_p),
         _randrange(0.01)
 {
     checkCudnnErrors( cudnnCreateFilterDescriptor(&filter_desc) );
     checkCudnnErrors( cudnnCreateConvolutionDescriptor(&conv_desc) );
 
-    cudnnDataType_t inp_datatype;
-    int inp_strid;
-    checkCudnnErrors( cudnnGetTensor4dDescriptor(input_tensor_desc,
-                                                 &inp_datatype,
-                                                 &in_N, &in_C, &in_H, &in_W,
-                                                 &inp_strid, &inp_strid, &inp_strid, &inp_strid) );
+    out_C = depth_p;
 
     std::cout << "conv in:  " << in_N << " " << in_C << " " << in_H << " " << in_W << std::endl;   const size_t conv_dims = 2;
     const int pad[conv_dims] = {zero_padding, zero_padding};
@@ -202,9 +194,9 @@ void ConvolutionLayer::propagate_forward(float* d_x){
 
 }
 
-void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x) {
+void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x, float momentum) {
     float alpha = 1.0;
-    float beta = 0.0f;
+    float beta = momentum;
 
 #ifdef DEBUG
     std::cout << "back conv in: " << cudaCheckNan(d_dy, out_N*out_C*out_H*out_W) << std::endl;
@@ -226,6 +218,7 @@ void ConvolutionLayer::propagate_backward(float* d_dy, float* d_x) {
                                                      &beta,
                                                      filter_desc, d_dweights) );
 
+    beta = 0.0;
     checkCudnnErrors( cudnnConvolutionBackwardData(cudnn_handle,
                                                    &alpha,
                                                    filter_desc, d_weights, 
@@ -273,6 +266,9 @@ void ConvolutionLayer::init_weights_random(std::mt19937& gen){
                                 sizeof(float) * weights_length, cudaMemcpyHostToDevice) );
     checkCudaErrors( cudaMemcpy(d_bias, h_bias,
                                 sizeof(float) * bias_length, cudaMemcpyHostToDevice) );
+    checkCudaErrors( cudaMemset(d_dweights, 0, sizeof(float) * weights_length) );
+    checkCudaErrors( cudaMemset(d_dbias, 0, sizeof(float) * bias_length) );
+    checkCudaErrors( cudaMemset(d_dx, 0, sizeof(float) * bias_length) );
 }
 
 

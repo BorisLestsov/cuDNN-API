@@ -5,11 +5,11 @@ PoolingLayer::PoolingLayer(cudnnHandle_t& cudnn_handle_p,
                            size_t size_p,
                            size_t stride_p, 
 			   size_t pad_p):
-        cudnn_handle(cudnn_handle_p),
-        input_tensor_desc(input_tensor_desc_p),
+
+        Layer(Layer_t::Pooling, input_tensor_desc_p, cudnn_handle_p, nullptr),
         size(size_p),
         stride(stride_p),
-	pad(pad_p)
+	    pad(pad_p)
 {
     int inp_strid;
     checkCudnnErrors( cudnnGetTensor4dDescriptor(input_tensor_desc,
@@ -72,7 +72,7 @@ void PoolingLayer::propagate_forward(float* d_x){
 }
 
 
-void PoolingLayer::propagate_backward(float* d_dy, float* d_x){
+void PoolingLayer::propagate_backward(float* d_dy, float* d_x, float momentum){
     float alpha = 1.0f, beta = 0.0f;
 
 #ifdef DEBUG    

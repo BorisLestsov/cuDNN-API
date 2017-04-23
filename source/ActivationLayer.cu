@@ -3,16 +3,9 @@
 ActivationLayer::ActivationLayer(cudnnHandle_t& cudnn_handle_p,
                                  cudnnTensorDescriptor_t input_tensor_desc_p,
                                  cudnnActivationMode_t act_f_p):
-        cudnn_handle(cudnn_handle_p),
-        input_tensor_desc(input_tensor_desc_p),
+        Layer(Layer_t::Activation, input_tensor_desc_p, cudnn_handle_p, nullptr),
         act_f(act_f_p)
 {
-    int inp_strid;
-    checkCudnnErrors( cudnnGetTensor4dDescriptor(input_tensor_desc,
-                                                 &inp_datatype,
-                                                 &in_N, &in_C, &in_H, &in_W,
-                                                 &inp_strid, &inp_strid, &inp_strid, &inp_strid) );
-
     out_N = in_N;
     out_C = in_C;
     out_H = in_H;
@@ -66,7 +59,7 @@ void ActivationLayer::propagate_forward(float* d_x){
 #endif
 }
 
-void ActivationLayer::propagate_backward(float* d_dy, float* d_x){
+void ActivationLayer::propagate_backward(float* d_dy, float* d_x, float momentum){
     float alpha = 1.0f, beta = 0.0f;
     
 #ifdef DEBUG

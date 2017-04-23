@@ -2,16 +2,9 @@
 
 MSELayer::MSELayer(cudnnHandle_t& cudnn_handle_p,
                    cudnnTensorDescriptor_t input_tensor_desc_p):
-        cudnn_handle(cudnn_handle_p),
-        input_tensor_desc(input_tensor_desc_p)
+        MetricLayer(Layer_t::MSE, input_tensor_desc_p, cudnn_handle_p, nullptr)
 
 {
-    int inp_strid;
-    checkCudnnErrors( cudnnGetTensor4dDescriptor(input_tensor_desc,
-                                                 &inp_datatype,
-                                                 &in_N, &in_C, &in_H, &in_W,
-                                                 &inp_strid, &inp_strid, &inp_strid, &inp_strid) );
-
     out_N = in_N;
     out_C = 1;
     out_H = 1;
@@ -28,7 +21,7 @@ MSELayer::MSELayer(cudnnHandle_t& cudnn_handle_p,
 
     checkCudaErrors( cudaMalloc(&d_output, sizeof(float) * out_N * out_C * out_H * out_W) );
     checkCudaErrors( cudaMalloc(&d_dx, sizeof(float) * in_N * in_C * in_H * in_W) );
-    float *h_output = (float *) malloc(out_N * out_W * sizeof(float));
+    h_output = (float *) malloc(out_N * out_C * out_H * out_W * sizeof(float));
 
 }
 
@@ -42,7 +35,7 @@ MSELayer::~MSELayer() {
 }
 
 
-void MSELayer::propagate_forward(float* d_t, float* d_x){
+void MSELayer::compute_loss(float *d_t, float *d_x){
 
     compute_mse<<<_ceil(in_N, BW), BW>>>(d_t, d_x, n_labels, in_N, d_output);
 
@@ -56,7 +49,7 @@ void MSELayer::propagate_forward(float* d_t, float* d_x){
 }
 
 
-void MSELayer::propagate_backward(float* d_t, float* d_y){
+void MSELayer::propagate_backward(float* d_t, float* d_y, float momentum){
 
     compute_mse_loss<<<_ceil(out_N, BW), BW>>>(d_t, d_y, n_labels, in_N, d_dx);
 

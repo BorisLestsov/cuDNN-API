@@ -2,8 +2,7 @@
 
 SoftmaxLayer::SoftmaxLayer(cudnnHandle_t& cudnn_handle_p,
                                  cudnnTensorDescriptor_t input_tensor_desc_p):
-        cudnn_handle(cudnn_handle_p),
-        input_tensor_desc(input_tensor_desc_p)
+        Layer(Layer_t::Softmax, input_tensor_desc_p, cudnn_handle_p, nullptr)
 {
     int inp_strid;
     checkCudnnErrors( cudnnGetTensor4dDescriptor(input_tensor_desc,
@@ -44,7 +43,8 @@ void SoftmaxLayer::propagate_forward(float* d_x){
 #ifdef DEBUG    
     std::cout << "sm in: " << cudaCheckNan(d_x, in_N*in_C*in_H*in_W) << std::endl;
 #endif
-    
+
+
     checkCudnnErrors( cudnnSoftmaxForward(cudnn_handle,
                                           CUDNN_SOFTMAX_ACCURATE,
                                           CUDNN_SOFTMAX_MODE_INSTANCE,
@@ -53,6 +53,7 @@ void SoftmaxLayer::propagate_forward(float* d_x){
                                           &beta,
                                           output_tensor_desc, d_output) );
 
+
 #ifdef DEBUG
     std::cout << "sm out: " << cudaCheckNan(d_output, out_N*out_C*out_H*out_W) << std::endl;
 #endif
@@ -60,7 +61,7 @@ void SoftmaxLayer::propagate_forward(float* d_x){
 }
 
 
-void SoftmaxLayer::propagate_backward(float* d_dy, float* d_x){
+void SoftmaxLayer::propagate_backward(float* d_dy, float* d_x, float momentum){
     float alpha = 1.0f, beta = 0.0f;
 
 #ifdef DEBUG

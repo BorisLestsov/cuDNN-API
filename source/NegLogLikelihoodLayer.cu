@@ -2,16 +2,9 @@
 
 NegLogLikelihoodLayer::NegLogLikelihoodLayer(cudnnHandle_t& cudnn_handle_p,
                    cudnnTensorDescriptor_t input_tensor_desc_p):
-           cudnn_handle(cudnn_handle_p),
-           input_tensor_desc(input_tensor_desc_p)
+        MetricLayer(Layer_t::NLL, input_tensor_desc_p, cudnn_handle_p, nullptr)
 
 {
-    int inp_strid;
-    checkCudnnErrors( cudnnGetTensor4dDescriptor(input_tensor_desc,
-                                                 &inp_datatype,
-                                                 &in_N, &in_C, &in_H, &in_W,
-                                                 &inp_strid, &inp_strid, &inp_strid, &inp_strid) );
-
     out_N = in_N;
     out_C = 1;
     out_H = 1;
@@ -42,7 +35,7 @@ NegLogLikelihoodLayer::~NegLogLikelihoodLayer() {
 }
 
 
-void NegLogLikelihoodLayer::propagate_forward(float* d_t, float* d_x){
+void NegLogLikelihoodLayer::compute_loss(float *d_t, float *d_x){
 #ifdef DEBUG
     std::cout << "nll in: " << cudaCheckNan(d_x, in_N*in_C*in_H*in_W) << std::endl;    
 #endif
@@ -63,17 +56,22 @@ void NegLogLikelihoodLayer::propagate_forward(float* d_t, float* d_x){
 }
 
 
-void NegLogLikelihoodLayer::propagate_backward(float* d_t, float* d_y){
+void NegLogLikelihoodLayer::propagate_backward(float* d_t, float* d_y, float momentum){
 #ifdef DEBUG
     std::cout << "back nll in: " << cudaCheckNan(d_y, out_N*out_C*out_H*out_W) << std::endl;
+    std::cout << "back nll in labels: " << cudaCheckNan(d_t, out_N*out_C*out_H*out_W) << std::endl;
 #endif
 
-    compute_nll_loss<<<_ceil(out_N, BW), BW>>>(d_t, d_y, n_labels, in_N, d_dx);
+    compute_nll_grad<<<_ceil(out_N, BW), BW>>>(d_t, d_y, n_labels, in_N, d_dx);
+
 
 #ifdef DEBUG    
     std::cout << "back nll out: " << cudaCheckNan(d_dx, in_N*in_C*in_H*in_W) << std::endl;
 #endif
 }
+
+
+
 
 
 __global__ void compute_nll(const float *labels,
@@ -96,7 +94,7 @@ __global__ void compute_nll(const float *labels,
 }
 
 
-__global__ void compute_nll_loss(const float *labels,
+__global__ void compute_nll_grad(const float *labels,
                                  const float* y,
                                  int num_labels,
                                  int batch_size,
@@ -109,6 +107,7 @@ __global__ void compute_nll_loss(const float *labels,
 
     int i, stride = batch_idx * num_labels;
     for (i = 0; i < num_labels; ++i){
+        //printf("%d - %d\n", labels[stride + i], y[stride + i]);
         grad[stride + i] = labels[stride + i] - y[stride + i];
     }
 }

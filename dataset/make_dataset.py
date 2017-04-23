@@ -45,7 +45,7 @@ def main():
     print metadata_lbls
     lb_f.write(metadata_lbls.tobytes())
 
-    for filenm in img_names:
+    for filenm in img_names[:8]:
         # Label preprocessing
         imgIds = [int(filenm[-16:-4])]
         print filenm, ':', imgIds,

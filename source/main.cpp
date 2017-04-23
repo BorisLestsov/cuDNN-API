@@ -1,5 +1,7 @@
 #include "TrainData.cuh"
-#include "ConvNet.cuh"
+#include "ConvNet.hpp"
+
+#include "LayerFactory.hpp"
 
 #include <iostream>
 
@@ -22,27 +24,93 @@ int main(){
         cublasHandle_t cublas_handle;
         checkCublasErrors(cublasCreate(&cublas_handle));
 
-        int train_batch_size = 256;
-        int test_batch_size = train_batch_size;
+        size_t train_batch_size = 1;
+        size_t test_batch_size = train_batch_size;
 
         TrainData train(cudnn_handle,
-                        "../dataset/imgdata.dat",
-                        "../dataset/nmdata.dat",
-                        "../dataset/lbldata.dat",
+                        "./dataset/imgdata.dat",
+                        "./dataset/nmdata.dat",
+                        "./dataset/lbldata.dat",
                         train_batch_size);
 
         TestData test(cudnn_handle,
-                      "../dataset/imgdata.dat",
-                      "../dataset/nmdata.dat",
+                      "./dataset/imgdata.dat",
+                      "./dataset/nmdata.dat",
                       train.n_labels,
                       test_batch_size);
 
-        train.n_examples = 2560;
+        train.n_examples = 8;
+        test.n_examples = 8;
 
 
-        ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc, seed);
-        alexnet.fit(train, 10, 1e-5);
-        //alexnet.predict(test);
+        ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc);
+        LayerFactory lf(cudnn_handle, cublas_handle, seed);
+
+        // Layers creation
+
+        alexnet.add_layer(lf.CreateConvolutionLayer(train.img_data_tensor_desc,
+                                                    96, 11, 4, 0));
+        alexnet.add_layer(lf.CreateActivationLayer(alexnet.last_layer_outp_desc(),
+                                                   CUDNN_ACTIVATION_RELU));
+        alexnet.add_layer(lf.CreatePoolingLayer(alexnet.last_layer_outp_desc(),
+                                                3, 2, 0));
+
+
+        alexnet.add_layer(lf.CreateConvolutionLayer(alexnet.last_layer_outp_desc(),
+                                                    256, 5, 1, 1));
+        alexnet.add_layer(lf.CreateActivationLayer(alexnet.last_layer_outp_desc(),
+                                                   CUDNN_ACTIVATION_RELU));
+        alexnet.add_layer(lf.CreatePoolingLayer(alexnet.last_layer_outp_desc(),
+                                                3, 2, 1));
+
+
+        alexnet.add_layer(lf.CreateConvolutionLayer(alexnet.last_layer_outp_desc(),
+                                                    384, 3, 1, 1));
+        alexnet.add_layer(lf.CreateActivationLayer(alexnet.last_layer_outp_desc(),
+                                                   CUDNN_ACTIVATION_RELU));
+
+
+        alexnet.add_layer(lf.CreateConvolutionLayer(alexnet.last_layer_outp_desc(),
+                                                    384, 3, 1, 1));
+        alexnet.add_layer(lf.CreateActivationLayer(alexnet.last_layer_outp_desc(),
+                                                   CUDNN_ACTIVATION_RELU));
+
+
+        alexnet.add_layer(lf.CreateConvolutionLayer(alexnet.last_layer_outp_desc(),
+                                                    256, 3, 1, 1));
+        alexnet.add_layer(lf.CreateActivationLayer(alexnet.last_layer_outp_desc(),
+                                                   CUDNN_ACTIVATION_RELU));
+        alexnet.add_layer(lf.CreatePoolingLayer(alexnet.last_layer_outp_desc(),
+                                                3, 2, 1));
+
+
+        alexnet.add_layer(lf.CreateFullyConnectedLayer(alexnet.last_layer_outp_desc(),
+                                                       1000));
+        alexnet.add_layer(lf.CreateActivationLayer(alexnet.last_layer_outp_desc(),
+                                                   CUDNN_ACTIVATION_RELU));
+
+
+        alexnet.add_layer(lf.CreateFullyConnectedLayer(alexnet.last_layer_outp_desc(),
+                                                       1000));
+        alexnet.add_layer(lf.CreateActivationLayer(alexnet.last_layer_outp_desc(),
+                                                   CUDNN_ACTIVATION_RELU));
+
+
+        alexnet.add_layer(lf.CreateFullyConnectedLayer(alexnet.last_layer_outp_desc(),
+                                                       91));
+        alexnet.add_layer(lf.CreateSoftmaxLayer(alexnet.last_layer_outp_desc()));
+
+
+        alexnet.set_metric(lf.CreateNLLMetric(alexnet.last_layer_outp_desc()));
+
+
+        //Training
+
+        alexnet.fit(train, 500, 1e-4, 0.98);
+        auto res = alexnet.predict_labels(test);
+        for (auto i: res){
+            std::cout << i << std::endl;
+        }
 
 
         checkCudnnErrors(cudnnDestroy(cudnn_handle));
@@ -50,6 +118,11 @@ int main(){
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl << "Aborting..." << std::endl;
+        cudaDeviceReset();
+        return 1;
+    }
+    catch (...) {
+        std::cerr <<"Unknown exception" << std::endl << "Aborting..." << std::endl;
         cudaDeviceReset();
         return 1;
     }

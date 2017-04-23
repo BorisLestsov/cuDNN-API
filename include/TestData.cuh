@@ -24,7 +24,7 @@ public:
     void copy_batch_to_GPU() override;
     void reset();
 
-    void predict_batch_classes(float* d_sm_output);
+    std::vector<int> predict_batch_classes(float *d_sm_output);
 
     void predict_batch_classes_proba(float* d_sm_output);
 

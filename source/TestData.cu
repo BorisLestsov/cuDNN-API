@@ -54,17 +54,12 @@ void TestData::reset(){
 }
 
 
-void TestData::predict_batch_classes(float* d_sm_output){
+std::vector<int> TestData::predict_batch_classes(float *d_sm_output){
+
+    static std::vector<int> tmp(batch_size);
 
     checkCudaErrors( cudaMemcpyAsync(h_lbl_data, d_sm_output,
                                      sizeof(float) * n_labels * batch_size, cudaMemcpyDeviceToHost) );
-
-//    for (uint b = 0 ; b < batch_size; ++b) {
-//        for (uint i = 0; i < n_labels; ++i) {
-//            std::cout << h_lbl_data[b*batch_size + i] << "    ";
-//        }
-//        std::cout << std::endl;
-//    }
 
     for (uint ex = 0; ex < batch_size; ++ex){
         float max_label_val = 0.0;
@@ -76,8 +71,10 @@ void TestData::predict_batch_classes(float* d_sm_output){
                 max_label_ind = label;
             }
         }
-        //predicted_labels[ex] = max_label_ind;
+        tmp[ex] = max_label_ind;
 
-        std::cout << "Example " << ids_data[ex] << ": " << max_label_ind << "    " << max_label_val << std::endl;
+        //std::cout << "Example " << ids_data[ex] << ": " << max_label_ind << "    " << max_label_val << std::endl;
     }
+
+    return tmp;
 }

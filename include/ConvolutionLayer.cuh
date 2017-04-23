@@ -14,18 +14,13 @@ public:
     cudnnConvolutionDescriptor_t conv_desc;
     cudnnFilterDescriptor_t filter_desc;
 
-
-    cudnnTensorDescriptor_t input_tensor_desc;
-    cudnnTensorDescriptor_t output_tensor_desc;
     cudnnTensorDescriptor_t bias_tensor_desc;
 
     cudnnConvolutionFwdAlgo_t forward_algo;
     cudnnConvolutionBwdFilterAlgo_t filter_algo;
     cudnnConvolutionBwdDataAlgo_t data_algo;
 
-    int in_N, in_C, in_H, in_W;
     int depth, kernel_size, filter_stride, zero_padding;
-    int out_N, out_C, out_H, out_W;
 
     size_t workspace_size_bytes;
     size_t weights_length;
@@ -34,12 +29,9 @@ public:
 
     float* h_weights, *h_bias;
     float* d_weights, *d_bias;
-    float* d_output;
 
     float* d_dbias, *d_dweights;
-    float* d_dx;
 
-    ConvolutionLayer(cudnnHandle_t& cudnn_handle_p);
     ConvolutionLayer(cudnnHandle_t& cudnn_handle_p,
                      cublasHandle_t& cublas_handle_p,
                      cudnnTensorDescriptor_t input_tensor_desc_p,
@@ -52,13 +44,12 @@ public:
     void load_weights_from_file(const char* fname);
     void save_kernels(const char* fname);
 
-    void propagate_forward(float* d_x);
-    void propagate_backward(float* d_dy, float* d_x);
-    void update_weights(float lr);
+    void propagate_forward(float* d_x) override;
+    void propagate_backward(float* d_dy, float* d_x, float momentum = 0.9) override;
+    void update_weights(float lr) override;
 
 private:
-    cublasHandle_t& cublas_handle;
-    cudnnHandle_t& cudnn_handle;
+
     void* d_workspace;
 
     float _randrange;

@@ -22,7 +22,9 @@
 template <typename T>
 struct isnan_test { 
     __host__ __device__ bool operator()(const T a) const {
-        return isnan(a);
+        //if (isnan(a) | isinf(a) | a>100)
+        //    printf("a: %f\n", a);
+        return isnan(a) | isinf(a);
     }
 };
 
