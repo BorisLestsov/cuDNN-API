@@ -24,7 +24,7 @@ int main(){
         cublasHandle_t cublas_handle;
         checkCublasErrors(cublasCreate(&cublas_handle));
 
-        size_t train_batch_size = 1;
+        size_t train_batch_size = 25;
         size_t test_batch_size = train_batch_size;
 
         TrainData train(cudnn_handle,
@@ -39,9 +39,7 @@ int main(){
                       train.n_labels,
                       test_batch_size);
 
-        train.n_examples = 8;
-        test.n_examples = 8;
-
+	train.n_examples = 1000;
 
         ConvNet alexnet(cudnn_handle, cublas_handle, train.img_data_tensor_desc);
         LayerFactory lf(cudnn_handle, cublas_handle, seed);
@@ -107,11 +105,11 @@ int main(){
         //Training
 
         alexnet.fit(train, 500, 1e-4, 0.98);
-        auto res = alexnet.predict_labels(test);
+/*        auto res = alexnet.predict_labels(test);
         for (auto i: res){
             std::cout << i << std::endl;
         }
-
+*/
 
         checkCudnnErrors(cudnnDestroy(cudnn_handle));
         checkCublasErrors(cublasDestroy(cublas_handle));

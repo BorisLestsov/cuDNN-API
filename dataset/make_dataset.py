@@ -16,7 +16,7 @@ def crop_center(img):
 
 def main():
     dataDir='annotations'
-    picDir='pic/test/'
+    picDir='pic/train/'
     dataType='train2014'
     annFile='%s/instances_%s.json' % (dataDir,dataType)
 
@@ -45,7 +45,7 @@ def main():
     print metadata_lbls
     lb_f.write(metadata_lbls.tobytes())
 
-    for filenm in img_names[:8]:
+    for filenm in img_names:
         # Label preprocessing
         imgIds = [int(filenm[-16:-4])]
         print filenm, ':', imgIds,
@@ -56,17 +56,23 @@ def main():
         myImg = coco.loadImgs(myImgIds)
         myImgAnnIds = coco.getAnnIds(imgIds=myImgIds, iscrowd=False)
         myImgAnns = coco.loadAnns(myImgAnnIds)
-        max_area_idx = np.argmax([ann['area'] for ann in myImgAnns])
-        cat = myImgAnns[max_area_idx]['category_id']
+        if (len(myImgAnns) != 0):
+        	max_area_idx = np.argmax([ann['area'] for ann in myImgAnns])
+        	cat = myImgAnns[max_area_idx]['category_id']
+        else:
+        	cat = 0
         cat_tmp = np.zeros(shape=[n_cats+1], dtype=np.float32)
         cat_tmp[cat] = 1.0
-        print coco.loadCats(cat)[0]['name'], "-", cat
+        if (cat != 0):
+        	print coco.loadCats(cat)[0]['name'], "-", cat
         lb_f.write(cat_tmp.tobytes())
         
 
         # Image preprocessing
         I = io.imread(picDir + filenm)
         # Transformed version is already normalized
+        if (I.shape != 3):
+        	I = np.dstack((I, I, I))
         I = transform.resize(crop_center(I), (IMGSIZE, IMGSIZE))
         I = I.astype('float32')
         im_f.write(I.tobytes())
